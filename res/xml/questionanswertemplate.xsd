@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.sauvik.me/QuestionAnswerTemplate" xmlns:tns="http://www.sauvik.me/QuestionAnswerTemplate" elementFormDefault="qualified">
+
+    <simpleType name="TagClass">
+    	<restriction base="string">
+    		<enumeration value="Person"></enumeration>
+    		<enumeration value="Activity"></enumeration>
+    		<enumeration value="Application"></enumeration>
+    		<enumeration value="Location"></enumeration>
+    	</restriction>
+    </simpleType>
+
+    <simpleType name="SubTagClass">
+    	<restriction base="string"></restriction>
+    </simpleType>
+
+    <simpleType name="SubValueClass">
+    	<restriction base="string"></restriction>
+    </simpleType>
+
+
+    <complexType name="NoValTag">
+    	<sequence>
+    		<element name="Class" type="tns:TagClass"></element>
+    		<element name="SubClass" type="tns:SubTagClass"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="ValTag">
+    	<sequence>
+    		<element name="Class" type="tns:TagClass" maxOccurs="1" minOccurs="1"></element>
+    		<element name="SubClass" type="tns:SubTagClass" maxOccurs="1" minOccurs="1"></element>
+    		<element name="SubVal" type="tns:SubValueClass" maxOccurs="1" minOccurs="0"></element>
+    	</sequence>
+    </complexType>
+
+	<complexType name="QuestionAnswerTemplate">
+   		<sequence>
+   			<element name="QText" type="string" maxOccurs="1"
+   				minOccurs="1">
+   			</element>
+   			<element name="Acond" maxOccurs="1" minOccurs="1">
+   				<complexType>
+   					<sequence>
+   						<element name="Descriptions" maxOccurs="1"
+   							minOccurs="0">
+   							<complexType>
+   								<sequence>
+   									<element name="Description" maxOccurs="unbounded" minOccurs="0">
+   										<simpleType>
+   											<restriction
+   												base="string">
+   												<enumeration
+   													value="list">
+   												</enumeration>
+   												<enumeration
+   													value="anysubclass">
+   												</enumeration>
+   											</restriction>
+   										</simpleType>
+   									</element>
+   								</sequence>
+   							</complexType>
+   						</element>
+   						<element name="Tag" type="tns:NoValTag"
+   							maxOccurs="unbounded" minOccurs="1">
+   						</element>
+   					</sequence>
+   				</complexType>
+   			</element>
+   			<element name="Qconds" maxOccurs="1" minOccurs="1">
+   				<complexType>
+   					<sequence>
+   						<element name="Qcond" maxOccurs="unbounded" minOccurs="0">
+   							<complexType>
+   								<sequence>
+   									<element name="Tag"
+   										type="tns:NoValTag">
+   									</element>
+   									<element name="RefNum"
+   										type="int">
+   									</element>
+   								</sequence>
+   							</complexType>
+   						</element>
+   					</sequence>
+   				</complexType>
+   			</element>
+   			<element name="MetaInfo" maxOccurs="1" minOccurs="0">
+   				<complexType>
+   					<sequence>
+   						<element name="Meta" maxOccurs="unbounded" minOccurs="0">
+   							<simpleType>
+   								<restriction base="string">
+   									<enumeration
+   										value="Difficulty">
+   									</enumeration>
+   								</restriction>
+   							</simpleType>
+   						</element>
+   					</sequence>
+   				</complexType>
+   			</element>
+   		</sequence>
+   	</complexType>
+    	
+	<complexType name="KnowledgeFact">
+		<sequence>
+			<element name="Timestamp" maxOccurs="1" minOccurs="1">
+				<complexType>
+					<sequence>
+						<element name="Date" type="dateTime"
+							maxOccurs="1" minOccurs="1">
+						</element>
+						<element name="DayOfWeek" maxOccurs="1"
+							minOccurs="0">
+							<simpleType>
+								<restriction base="string">
+									<enumeration value="Sunday"></enumeration>
+									<enumeration value="Monday"></enumeration>
+									<enumeration value="Tuesday"></enumeration>
+									<enumeration
+										value="Wednesday">
+									</enumeration>
+									<enumeration value="Thursday"></enumeration>
+									<enumeration value="Friday"></enumeration>
+									<enumeration value="Saturday"></enumeration>
+								</restriction>
+							</simpleType>
+						</element>
+					</sequence>
+				</complexType>
+			</element>
+			<element name="Tags" maxOccurs="1" minOccurs="1">
+				<complexType>
+					<sequence>
+						<element name="Tag" type="tns:ValTag"
+							maxOccurs="unbounded" minOccurs="1">
+						</element>
+					</sequence>
+				</complexType>
+			</element>
+			<element name="MetaInformation" maxOccurs="1" minOccurs="0">
+				<complexType>
+					<sequence>
+						<element name="Meta" maxOccurs="1"
+							minOccurs="0">
+							<complexType>
+								<sequence>
+									<element name="Name">
+										<simpleType>
+											<restriction
+												base="string">
+												<enumeration
+													value="Reliability">
+												</enumeration>
+											</restriction>
+										</simpleType>
+									</element>
+									<element name="Value"
+										type="string">
+									</element>
+								</sequence>
+							</complexType>
+						</element>
+					</sequence>
+				</complexType>
+			</element>
+		</sequence>
+	</complexType>
+    
+
+
+    <element name="KnowledgeBase">
+    	<complexType>
+    		<sequence>
+    			<element name="Fact" type="tns:KnowledgeFact"
+				 							maxOccurs="unbounded" minOccurs="0">
+				</element>
+    		</sequence>
+    	</complexType>
+    </element>
+
+    <element name="QATs">
+    	<complexType>
+    		<sequence>
+    			<element name="QAT" type="tns:QuestionAnswerTemplate" maxOccurs="unbounded" minOccurs="0">
+    			</element>
+    		</sequence>
+    	</complexType>
+    </element>
+</schema>

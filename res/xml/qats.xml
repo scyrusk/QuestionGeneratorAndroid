@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tns:QATs xmlns:tns="http://www.sauvik.me/QuestionAnswerTemplate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sauvik.me/QuestionAnswerTemplate QuestionAnswerTemplate.xsd ">
+  <tns:QAT>
+	  <tns:QText>What application did you use on (time)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	        <tns:Description>anysubclass</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Application</tns:Class>
+	      <tns:SubClass>*</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds/>
+  </tns:QAT>
+  
+  <tns:QAT>
+	  <tns:QText>What (acond-subclass) application did you use on (time)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Application</tns:Class>
+	      <tns:SubClass>*</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds/>
+  </tns:QAT>
+  
+  <tns:QAT>
+	  <tns:QText>Where were you at (time)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Location</tns:Class>
+	      <tns:SubClass>*</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds/>
+  </tns:QAT>
+</tns:QATs>
