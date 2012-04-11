@@ -15,6 +15,17 @@ public class KnowledgeBase {
 		this.mDbHelper = db;
 	}
 	
+	public Long[] sameStruct(long fact_id, Long[] all_fact_ids) {
+		//create working tag counter for fact_id
+		//go through all facts in all_facts_id, get their tags
+		//if tag counters match, then select. Otherwise discard
+		ArrayList<Long> filtered = new ArrayList<Long>();
+		//create tag counter for fact_id
+		
+		return filtered.toArray(new Long[filtered.size()]);
+	}
+	
+	
 	public static String printFact(HashMap<String,Object> fact) {
 		StringBuffer retVal = new StringBuffer();
         for (String s : fact.keySet()) {

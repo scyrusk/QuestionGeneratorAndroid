@@ -2,6 +2,7 @@ package com.cmuchimps.myauth;
 
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 
 import android.content.ContentValues;
@@ -188,7 +189,7 @@ public class KBDbAdapter {
     public long createFact(String timestamp, String dayOfWeek, ArrayList<HashMap<String,String>> tags, ArrayList<HashMap<String,String>> metas) {
     	/* Insert fact */
     	ContentValues fact_vals = new ContentValues();
-    	fact_vals.put("timestamp", timestamp);
+    	fact_vals.put("timestamp", UtilityFuncs.join(timestamp.split("T"), ""));
     	fact_vals.put("dayOfWeek", dayOfWeek);
     	long fact_id = mDb.insert(FACTS_TABLE, null, fact_vals);
     	
@@ -666,8 +667,45 @@ public class KBDbAdapter {
     	return retVal;
     }
     
-    public Long[] getAllQats() {
-    	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null, null);
+    public Long[] getAllQATs() {
+    	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
+    	if (c.getCount() <= 0) return new Long[0];
+    	return this.getIndicesFromCursor(c);
+    }
+    
+    public Long[] getAllFacts() {
+    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
+    	if (c.getCount() <= 0) return new Long[0];
+    	return this.getIndicesFromCursor(c);
+    }
+    
+    /**
+     * 
+     * @param columns
+     * @param selection
+     * @param selectionArgs
+     * @return
+     */
+    public Long[] getFilteredFacts(String[] columns, String selection, String[] selectionArgs) {
+    	Cursor c = mDb.query(FACTS_TABLE, columns, selection, selectionArgs, null, null, null);
+    	if (c.getCount() <= 0) return new Long[0];
+    	return this.getIndicesFromCursor(c);
+    }
+    
+    /**
+     * Gets all facts within ellapsedTimeMillis of the given timeString or the current time
+     * @param ellapsedTimeMillis
+     * @param timeString formatted as: YYYY-MM-DDHH:mm:ss or * to use current time
+     * @return
+     */
+    public Long[] getFilteredFactsByTime(long ellapsedTimeMillis,String timeString) {
+    	long seconds = ellapsedTimeMillis/1000;
+    	String pivotTime = (timeString.equalsIgnoreCase("*") ? "datetime('now')" : "datetime('" + timeString + "')");
+    	return getFilteredFacts(new String[] { KEY_ROWID, "timestamp"}, "timestamp between ? and ? or timestamp between ? and ?", new String[] {"datetime('now','-" + seconds + " seconds'",pivotTime,pivotTime,"datetime('now','+" + seconds + " seconds'"});
+    }
+    
+    public Long[] getFilteredFactsByWeekday(String weekday) {
+    	return getFilteredFacts(new String[] { KEY_ROWID, "dayOfWeek"}, "dayOfWeek="+weekday,null);
     }
     
     /**
