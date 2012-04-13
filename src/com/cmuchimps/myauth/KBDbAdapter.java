@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+import com.cmuchimps.myauth.DataWrapper.*;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -14,6 +16,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 public class KBDbAdapter {
+	private DataWrapper dw;
 	public static final String KEY_ROWID = "_id";
 	public static final String DATABASE_NAME = "knowledge_base";
 	public static final int DATABASE_VERSION = 2;
@@ -112,6 +115,9 @@ public class KBDbAdapter {
 		this.mCtx = ctx;
 	}
 	
+	public void setDW(DataWrapper wrapper) {
+		this.dw = wrapper;
+	}
 	/**
      * Open the database. If it cannot be opened, try to create a new
      * instance of the database. If it cannot be created, throw an exception to
@@ -406,12 +412,142 @@ public class KBDbAdapter {
     
     //Knowledge Base Functions
     
+    public Tag getTag(long row_id) {
+    	String tc, subclass, subvalue=null;
+    	HashMap<String,String> retVal = new HashMap<String,String>();
+    	Cursor c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "tag_classid", "subclass", "subvalue"}, KEY_ROWID+"="+row_id, null, null, null, null);
+    	if (c.getCount() == 0) return dw.new Tag(-1, "","","");
+    	c.moveToFirst();
+    	tc = this.getTagClass(c.getLong(c.getColumnIndex("tag_classid")));
+    	subclass = c.getString(c.getColumnIndex("subclass"));
+    	if (!c.isNull(c.getColumnIndex("subvalue"))) subvalue = c.getString(c.getColumnIndex("subvalue"));
+    	return dw.new Tag(row_id, tc, subclass, subvalue);
+    }
+    
+    public String getDescription(long row_id) {
+    	Cursor c = mDb.query(DESCRIPTIONS_TABLE, new String[] { KEY_ROWID, "description" }, KEY_ROWID+"="+row_id, null, null, null, null);
+    	if (c.getCount() == 0) return "";
+    	c.moveToFirst();
+    	return c.getString(c.getColumnIndex("description"));
+    }
+    
+    public String getTagClass(long row_id) {
+    	Cursor c = mDb.query(TAG_CLASS_TABLE, new String[] { KEY_ROWID, "name"}, KEY_ROWID + "=" + row_id, null, null, null, null);
+    	if (c.getCount() == 0) return "";
+    	c.moveToFirst();
+    	return c.getString(c.getColumnIndex("name"));
+    }
+    
+    public Meta getMeta(long row_id) {
+    	String name = "", value = null;
+    	Cursor c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "name", "value"}, KEY_ROWID + "=" + row_id, null, null, null, null);
+    	c.moveToFirst();
+    	name = c.getString(c.getColumnIndex("name"));
+    	if (!c.isNull(c.getColumnIndex("value"))) value = c.getString(c.getColumnIndex("value"));
+    	return dw.new Meta(row_id, name, value);
+    }
+    
+    public Acond getAcond(long row_id) {
+    	Long[] di = new Long[0], ti = new Long[0];
+    	//get descriptions
+    	Cursor c = mDb.query(DESCRIPTIONS_TABLE, new String[] { KEY_ROWID, "description", "acondsid" }, "acondsid=" + row_id, null, null, null, null);
+    	if (c.getCount() > 0) {
+	    	di = this.getIndicesFromCursor(c);
+    	}
+    	//get tags
+    	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "acondsid"}, "acondsid="+row_id, null, null, null, null);
+    	if (c.getCount() > 0) {
+    		ti = this.getIndicesFromCursor(c);
+    	}
+    	return dw.new Acond(row_id, di, ti);
+    }
+    
+    public Qcond getQcond(long row_id) {
+    	int refNum = -1;
+    	Long[] ti = new Long[0];
+    	//get refnum
+    	Cursor c = mDb.query(QCOND_TABLE, new String[] {KEY_ROWID,"refnum"}, KEY_ROWID + "=" + row_id, null, null, null, null);
+    	if (c.getCount() > 0) {	
+    		c.moveToFirst();
+    		refNum = c.getInt(c.getColumnIndex("refnum"));
+    	}
+    	//get tags
+    	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "acondsid"}, "acondsid="+row_id, null, null, null, null);
+    	if (c.getCount() > 0) {
+    		ti = this.getIndicesFromCursor(c);
+    	}
+    	return (refNum == -1 && ti.length == 0 ? dw.new Qcond(row_id) : dw.new Qcond(row_id, refNum, ti));
+    }
+    
+    public Fact getFact(long row_id) {
+    	String timestamp = "", dayOfWeek = "";
+    	Long[] mi = new Long[0], ti = new Long[0];
+    	
+    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "timestamp", "dayOfWeek"}, KEY_ROWID+"="+row_id, null, null, null, null);
+    	if (c.getCount() <= 0) return dw.new Fact();
+    	//get timestamp
+    	c.moveToFirst();
+    	timestamp = c.getString(c.getColumnIndex("timestamp"));
+    	dayOfWeek = c.getString(c.getColumnIndex("dayOfWeek"));
+    	//get tags
+    	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "factsid"}, "factsid="+row_id, null, null, null, null);
+    	if (c.getCount() > 0) {
+    		ti = this.getIndicesFromCursor(c);
+    	}
+    	//get metas
+    	c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "factsid"}, "factsid="+row_id, null, null, null, null);
+    	if (c.getCount() > 0) {
+    		mi = this.getIndicesFromCursor(c);
+    	}
+    	return dw.new Fact(row_id, timestamp, dayOfWeek, mi, ti);
+    }
+    
+    public QAT getQAT(long row_id) {
+    	String qtext = "";
+    	long acond_id = -1;
+    	Long[] qi = new Long[0], mi = new Long[0];
+    	
+    	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID, "qtext"}, KEY_ROWID + "=" + row_id, null,null,null,null,null);
+    	if (c.getCount() <= 0) return dw.new QAT();
+    	c.moveToFirst();
+    	qtext = c.getString(c.getColumnIndex("qtext"));
+    	//get acond
+    	c = mDb.query(ACOND_TABLE, new String[] {KEY_ROWID, "qatid"}, "qatid="+row_id, null, null, null, null);
+    	if (c.getCount() > 0) {
+    		c.moveToFirst();
+    		acond_id = c.getLong(c.getColumnIndex("qatid"));
+    	}
+    	//get qconds
+    	c = mDb.query(QCOND_TABLE, new String[] { KEY_ROWID, "qatid"}, "qatid="+row_id, null, null, null, null);
+    	if (c.getCount() > 0) {
+    		qi = this.getIndicesFromCursor(c);
+    	}
+    	//get metas
+    	c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "qatid"}, "qatid="+row_id, null, null, null, null);
+    	if (c.getCount() > 0) {
+    		mi = this.getIndicesFromCursor(c);
+    	}
+    	return dw.new QAT(row_id, qtext, acond_id, qi, mi);
+    }
+    
+    public Long[] getAllQATs() {
+    	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
+    	if (c.getCount() <= 0) return new Long[0];
+    	return this.getIndicesFromCursor(c);
+    }
+    
+    public Long[] getAllFacts() {
+    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
+    	if (c.getCount() <= 0) return new Long[0];
+    	return this.getIndicesFromCursor(c);
+    }
+    
     /**
      * Should also make memory efficient version that just has references to complex types (e.g. tags, etc)
      * @param fact_id
      * @return
      */
-    public HashMap<String,Object> getFact(long fact_id) {
+    public HashMap<String,Object> getExpandedFact(long fact_id) {
 		HashMap<String,Object> retVal = new HashMap<String,Object>();
 		//get timestamp
 		Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "timestamp", "dayOfWeek" }, KEY_ROWID + "=" + fact_id, null, null, null, null);
@@ -464,7 +600,7 @@ public class KBDbAdapter {
      * @param qat_id
      * @return
      */
-    public HashMap<String,Object> getQAT(long qat_id) {
+    public HashMap<String,Object> getExpandedQAT(long qat_id) {
     	System.out.println("Sup, getQAT");
     	HashMap<String,Object> retVal = new HashMap<String,Object>();
     	//get QText
@@ -561,122 +697,24 @@ public class KBDbAdapter {
     	return retVal;
     }
     
-    public HashMap<String,String> getTag(long row_id) {
-    	HashMap<String,String> retVal = new HashMap<String,String>();
-    	Cursor c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "tag_classid", "subclass", "subvalue"}, KEY_ROWID+"="+row_id, null, null, null, null);
-    	if (c.getCount() == 0) return retVal;
-    	c.moveToFirst();
-    	retVal.put("class", this.getTagClass(c.getLong(c.getColumnIndex("tag_classid"))));
-    	retVal.put("subclass", c.getString(c.getColumnIndex("subclass")));
-    	if (!c.isNull(c.getColumnIndex("subvalue"))) retVal.put("subvalue", c.getString(c.getColumnIndex("subvalue")));
-    	return retVal;
-    }
-    
-    public String getDescription(long row_id) {
-    	Cursor c = mDb.query(DESCRIPTIONS_TABLE, new String[] { KEY_ROWID, "description" }, KEY_ROWID+"="+row_id, null, null, null, null);
-    	if (c.getCount() == 0) return "";
-    	c.moveToFirst();
-    	return c.getString(c.getColumnIndex("descriptions"));
-    }
-    
-    public String getTagClass(long row_id) {
-    	Cursor c = mDb.query(TAG_CLASS_TABLE, new String[] { KEY_ROWID, "name"}, KEY_ROWID + "=" + row_id, null, null, null, null);
-    	if (c.getCount() == 0) return "";
-    	c.moveToFirst();
-    	return c.getString(c.getColumnIndex("name"));
-    }
-    
-    public HashMap<String,String> getMeta(long row_id) {
-    	HashMap<String,String> retVal = new HashMap<String,String>();
-    	Cursor c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "name", "value"}, KEY_ROWID + "=" + row_id, null, null, null, null);
-    	c.moveToFirst();
-    	retVal.put("name", c.getString(c.getColumnIndex("name")));
-    	if (!c.isNull(c.getColumnIndex("value"))) retVal.put("value", c.getString(c.getColumnIndex("value")));
-    	return retVal;
-    }
-    
-    public HashMap<String,Object> getAcond(long row_id) {
-    	HashMap<String,Object> retVal = new HashMap<String,Object>();
-    	//get descriptions
-    	Cursor c = mDb.query(DESCRIPTIONS_TABLE, new String[] { KEY_ROWID, "description", "acondsid" }, "acondsid=" + row_id, null, null, null, null);
-    	if (c.getCount() > 0) {
-	    	retVal.put("descriptions", this.getIndicesFromCursor(c));
-    	}
-    	//get tags
-    	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "acondsid"}, "acondsid="+row_id, null, null, null, null);
-    	if (c.getCount() > 0) {
-    		retVal.put("tags", this.getIndicesFromCursor(c));
-    	}
-    	return retVal;
-    }
-    
-    public HashMap<String,Object> getQcond(long row_id) {
-    	HashMap<String,Object> retVal = new HashMap<String,Object>();
-    	//get refnum
-    	Cursor c = mDb.query(QCOND_TABLE, new String[] {KEY_ROWID,"refnum"}, KEY_ROWID + "=" + row_id, null, null, null, null);
-    	retVal.put("refnum", c.getInt(c.getColumnIndex("refnum")));
-    	//get tags
-    	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "acondsid"}, "acondsid="+row_id, null, null, null, null);
-    	if (c.getCount() > 0) {
-    		retVal.put("tags", this.getIndicesFromCursor(c));
-    	}
-    	return retVal;
-    }
-    
-    public HashMap<String,Object> getFactMemEff(long row_id) {
-    	HashMap<String,Object> retVal = new HashMap<String,Object>();
-    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "timestamp", "dayOfWeek"}, KEY_ROWID+"="+row_id, null, null, null, null);
-    	if (c.getCount() <= 0) return retVal;
-    	//get timestamp
-    	retVal.put("timestamp", c.getString(c.getColumnIndex("timestamp")));
-    	retVal.put("dayOfWeek", c.getString(c.getColumnIndex("dayOfWeek")));
-    	//get tags
-    	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "factsid"}, "factsid="+row_id, null, null, null, null);
-    	if (c.getCount() > 0) {
-    		retVal.put("tags", this.getIndicesFromCursor(c));
-    	}
-    	//get metas
-    	c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "factsid"}, "factsid="+row_id, null, null, null, null);
-    	if (c.getCount() > 0) {
-    		retVal.put("metas", this.getIndicesFromCursor(c));
-    	}
-    	return retVal;
-    }
-    
-    public HashMap<String,Object> getQATMemEff(long row_id) {
-    	HashMap<String,Object> retVal = new HashMap<String,Object>();
-    	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID, "qtext"}, KEY_ROWID + "=" + row_id, null,null,null,null,null);
-    	if (c.getCount() <= 0) return retVal;
-    	retVal.put("qtext", c.getString(c.getColumnIndex("qtext")));
-    	//get acond
-    	c = mDb.query(ACOND_TABLE, new String[] {KEY_ROWID, "qatid"}, "qatid="+row_id, null, null, null, null);
-    	if (c.getCount() > 0) {
-    		c.moveToFirst();
-    		retVal.put("acond", c.getLong(c.getColumnIndex("qatid")));
-    	}
-    	//get qconds
-    	c = mDb.query(QCOND_TABLE, new String[] { KEY_ROWID, "qatid"}, "qatid="+row_id, null, null, null, null);
-    	if (c.getCount() > 0) {
-    		retVal.put("qconds", this.getIndicesFromCursor(c));
-    	}
-    	//get metas
-    	c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "qatid"}, "qatid="+row_id, null, null, null, null);
-    	if (c.getCount() > 0) {
-    		retVal.put("metas", this.getIndicesFromCursor(c));
-    	}
-    	return retVal;
-    }
-    
-    public Long[] getAllQATs() {
-    	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
-    	if (c.getCount() <= 0) return new Long[0];
-    	return this.getIndicesFromCursor(c);
-    }
-    
-    public Long[] getAllFacts() {
-    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
-    	if (c.getCount() <= 0) return new Long[0];
-    	return this.getIndicesFromCursor(c);
+    /**
+     * 
+     * @param ellapsedTimeMillis
+     * @param timeString
+     * @param tags
+     * @return
+     */
+    public Long[] getFilteredFacts(long ellapsedTimeMillis, String timeString, String[] tags) {
+    	Long[] time_filtered = null, tag_filtered = null;
+    	if (ellapsedTimeMillis >= 0)
+    		time_filtered = this.getFilteredFactsByTime(ellapsedTimeMillis, timeString);
+    	if (tags != null)
+    		tag_filtered = this.getFilteredFactsByTag(tags);
+    	
+    	if (time_filtered == null && tag_filtered == null) return new Long[0];
+    	else if (time_filtered == null) return tag_filtered;
+    	else if (tag_filtered == null) return time_filtered;
+    	else return UtilityFuncs.getIntersection(time_filtered, tag_filtered);
     }
     
     /**
@@ -700,12 +738,108 @@ public class KBDbAdapter {
      */
     public Long[] getFilteredFactsByTime(long ellapsedTimeMillis,String timeString) {
     	long seconds = ellapsedTimeMillis/1000;
-    	String pivotTime = (timeString.equalsIgnoreCase("*") ? "datetime('now')" : "datetime('" + timeString + "')");
-    	return getFilteredFacts(new String[] { KEY_ROWID, "timestamp"}, "timestamp between ? and ? or timestamp between ? and ?", new String[] {"datetime('now','-" + seconds + " seconds'",pivotTime,pivotTime,"datetime('now','+" + seconds + " seconds'"});
+    	String pivotTime = (timeString.equalsIgnoreCase("*") ? "'now'" : "'" + timeString + "'");
+    	String query = "timestamp between datetime(" + pivotTime + ",'-" + seconds + " seconds') and datetime(" + pivotTime + ") or timestamp between datetime(" + pivotTime + ") and datetime(" + pivotTime + ",'+" + seconds + " seconds')";
+    	System.out.println(query);
+    	return getFilteredFacts(new String[] { KEY_ROWID, "timestamp"}, query, null);
     }
     
+    /**
+     * Gets all facts based on presence of a tag
+     * Tags should be formatted as class_name:subclass_name
+     * If any subclass is permissible, just enter the class_name
+     * @param tags
+     * @return
+     */
+    public Long[] getFilteredFactsByTag(String[] tags) {
+    	System.out.println("Entering get filtered facts by tag:");
+    	String[] helper = tags[0].split(":");
+    	StringBuffer query = new StringBuffer("select distinct facts._id, tag_class.name from facts,tags,tag_class where tags.tag_classid = tag_class._id and facts._id = tags.factsid and ((tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'": "") + ") ");   	
+    	for (int i = 1; i < tags.length; i++) {
+    		helper = tags[i].split(":");
+    		query.append("or (tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'" : "") + ") ");
+    	}
+    	query.append(");");
+    	System.out.println(query.toString());
+    	Cursor c = mDb.rawQuery(query.toString(), null);
+    	return this.getIndicesFromCursor(c);
+    }
+    
+    /**
+     * Gets all facts on a certain weekday
+     * @param weekday
+     * @return
+     */
     public Long[] getFilteredFactsByWeekday(String weekday) {
     	return getFilteredFacts(new String[] { KEY_ROWID, "dayOfWeek"}, "dayOfWeek="+weekday,null);
+    }
+    
+    /**
+     * 
+     * @param metas
+     * @param tags
+     * @return
+     */
+    public Long[] getFilteredQats(String[] metas, String[] tags) {
+    	Long[] meta_filtered = null, tag_filtered = null;
+    	if (metas != null) meta_filtered = this.getFilteredQatsByMetas(metas);
+    	if (tags != null) tag_filtered = this.getFilteredQatsByTag(tags);
+    	
+    	if (meta_filtered == null && tag_filtered == null) return new Long[0];
+    	else if (meta_filtered == null) return tag_filtered;
+    	else if (tag_filtered == null) return meta_filtered;
+    	else return UtilityFuncs.getIntersection(meta_filtered, tag_filtered);
+    }
+    
+    /**
+     * Gets all facts based on presence of a tag
+     * Tags should be formatted as class_name:subclass_name
+     * If any subclass is permissible, just enter the class_name
+     * @param tags
+     * @return
+     */
+    public Long[] getFilteredQatsByTag(String[] tags) {
+    	System.out.println("Entering get filtered qats by tag:");
+    	String[] helper = tags[0].split(":");
+    	StringBuffer query = new StringBuffer("select distinct qats._id from qats,qconds,tags,tag_class where qconds.qatid = qats._id and tags.qcondsid = qconds._id and tags.tag_classid = tag_class._id and ((tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'": "") + ") ");
+    	for (int i = 1; i < tags.length; i++) {
+    		helper = tags[i].split(":");
+    		query.append("or (tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'" : "") + ") ");
+    	}
+    	query.append(");");
+    	System.out.println(query.toString());
+    	Cursor c = mDb.rawQuery(query.toString(), null);
+    	Long[] qconds_matches = this.getIndicesFromCursor(c);
+    	
+    	helper = tags[0].split(":");
+    	query = new StringBuffer("select distinct qats._id from qats,aconds,tags,tag_class where aconds.qatid = qats._id and tags.acondsid = aconds._id and tags.tag_classid = tag_class._id and ((tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'": "") + ") ");
+    	for (int i = 1; i < tags.length; i++) {
+    		helper = tags[i].split(":");
+    		query.append("or (tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'" : "") + ") ");
+    	}
+    	query.append(");");
+    	System.out.println(query.toString());
+    	c = mDb.rawQuery(query.toString(), null);
+    	Long[] aconds_matches = this.getIndicesFromCursor(c);
+    	return UtilityFuncs.getUnion(qconds_matches, aconds_matches);
+    }
+    
+    /**
+     * 
+     * @param metas
+     * @return
+     */
+    public Long[] getFilteredQatsByMetas(String[] metas) {
+    	String[] helper = metas[0].split(":");
+    	StringBuffer query = new StringBuffer("select distinct qats._id from qats,metas where metas.qatid = qats._id and ((metas.name = '" + helper[0] + "'" + (helper.length > 1 ? " and metas.value = '" + helper[1] + "'": "") + ") ");   	
+    	for (int i = 1; i < metas.length; i++) {
+    		helper = metas[i].split(":");
+    		query.append("or (metas.name = '" + helper[0] + "'" + (helper.length > 1 ? " and metas.value = '" + helper[1] + "'" : "") + ") ");
+    	}
+    	query.append(");");
+    	System.out.println(query.toString());
+    	Cursor c = mDb.rawQuery(query.toString(), null);
+    	return this.getIndicesFromCursor(c);
     }
     
     /**
@@ -719,8 +853,8 @@ public class KBDbAdapter {
     	c.moveToFirst();
     	while (!c.isAfterLast()) {
     		indices[counter++] = c.getLong(c.getColumnIndex(KEY_ROWID));
+    		c.moveToNext();
     	}
     	return indices;
     }
-    
 }
