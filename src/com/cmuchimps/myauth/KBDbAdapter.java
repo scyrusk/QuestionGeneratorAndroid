@@ -2,10 +2,7 @@ package com.cmuchimps.myauth;
 
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-
-import com.cmuchimps.myauth.DataWrapper.*;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -13,7 +10,15 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.text.format.Time;
 import android.util.Log;
+
+import com.cmuchimps.myauth.DataWrapper.Acond;
+import com.cmuchimps.myauth.DataWrapper.Fact;
+import com.cmuchimps.myauth.DataWrapper.Meta;
+import com.cmuchimps.myauth.DataWrapper.QAT;
+import com.cmuchimps.myauth.DataWrapper.Qcond;
+import com.cmuchimps.myauth.DataWrapper.Tag;
 
 public class KBDbAdapter {
 	private DataWrapper dw;
@@ -31,6 +36,7 @@ public class KBDbAdapter {
 	private static final String ACOND_TABLE = "aconds";
 	private static final String TAG_CLASS_TABLE = "tag_class";
 	private static final String DESCRIPTIONS_TABLE = "descriptions";
+	private static final String SUBSCRIPTIONS_TABLE = "subscriptions";
 	
 	private DatabaseHelper mDbHelper;
 	private SQLiteDatabase mDb;
@@ -72,10 +78,17 @@ public class KBDbAdapter {
 			+ "qcondsid integer references " + QCOND_TABLE + "(id)," 
 			+ "acondsid integer references " + ACOND_TABLE + "(id));";
 	
+	private static final String SUBSCRIPTIONS_CREATE = 
+			"create table " + SUBSCRIPTIONS_TABLE + "(_id integer primary key autoincrement,"
+			+ "subskey string NOT NULL,"
+			+ "poll_interval integer NOT NULL,"
+			+ "last_update integer NOT NULL,"
+			+ "class_name string NOT NULL);";
+	
 	private static final String[] TABLES = {TAG_CLASS_TABLE, FACTS_TABLE, META_TABLE, DESCRIPTIONS_TABLE, 
-		QCOND_TABLE, ACOND_TABLE, QAT_TABLE, TAGS_TABLE};
+		QCOND_TABLE, ACOND_TABLE, QAT_TABLE, TAGS_TABLE, SUBSCRIPTIONS_TABLE};
 	private static final String[] TABLE_CREATION = {TAG_CLASS_CREATE, QAT_CREATE, META_CREATE, FACTS_CREATE,
-		QCOND_CREATE, ACOND_CREATE, DESCRIPTIONS_CREATE, TAGS_CREATE};
+		QCOND_CREATE, ACOND_CREATE, DESCRIPTIONS_CREATE, TAGS_CREATE, SUBSCRIPTIONS_CREATE};
 	
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -195,7 +208,7 @@ public class KBDbAdapter {
     public long createFact(String timestamp, String dayOfWeek, ArrayList<HashMap<String,String>> tags, ArrayList<HashMap<String,String>> metas) {
     	/* Insert fact */
     	ContentValues fact_vals = new ContentValues();
-    	fact_vals.put("timestamp", UtilityFuncs.join(timestamp.split("T"), ""));
+    	fact_vals.put("timestamp", UtilityFuncs.join(timestamp.split("T"), " "));
     	fact_vals.put("dayOfWeek", dayOfWeek);
     	long fact_id = mDb.insert(FACTS_TABLE, null, fact_vals);
     	
@@ -248,8 +261,12 @@ public class KBDbAdapter {
      * 
      * @return
      */
-    public Cursor fetchAllFacts() {
-    	return mDb.query(FACTS_TABLE, new String[] {}, null, null, null, null, null);
+    public Cursor fetchAllFacts(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    	return mDb.query(FACTS_TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+    }
+    
+    public Cursor fetchFact(long row_id, String[] projection) {
+    	return mDb.query(FACTS_TABLE, projection, KEY_ROWID + "=" + row_id, null, null, null, null);
     }
     
     /**
@@ -409,6 +426,69 @@ public class KBDbAdapter {
     	return mDb.delete(QCOND_TABLE, KEY_ROWID+"="+rowId, null);
     }
     
+    
+    public long createSubscription(String subskey,long poll_interval,long last_update,String class_name) {
+    	ContentValues vals = new ContentValues();
+    	vals.put("subskey",subskey);
+    	vals.put("poll_interval", poll_interval);
+    	vals.put("last_update", last_update);
+    	vals.put("class_name", class_name);
+    	return mDb.insert(SUBSCRIPTIONS_TABLE,null,vals);
+    }
+    
+    public int deleteSubscription(long rowId) {
+    	return mDb.delete(SUBSCRIPTIONS_TABLE, KEY_ROWID + "=" + rowId, null);
+    }
+    
+    public int deleteSubscription(String subskey) {
+    	return mDb.delete(SUBSCRIPTIONS_TABLE, "subskey='" + subskey + "'", null);
+    }
+    
+    public HashMap<String,String> getAllSubscriptions() {
+    	HashMap<String,String> subs = new HashMap<String,String>();
+    	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { KEY_ROWID, "subskey", "class_name" }, null, null, null, null, null);
+    	c.moveToFirst();
+    	while (!c.isAfterLast()) {
+    		subs.put(c.getString(c.getColumnIndex("subskey")),c.getString(c.getColumnIndex("class_name")));
+    		c.moveToNext();
+    	}
+    	return subs;
+    }
+    
+    public String getSubscriptionClassFor(String subskey) {
+    	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "class_name" }, "subskey='" + subskey + "'", null, null, null, null);
+    	if (c.getCount() == 0) return "";
+    	return c.getString(c.getColumnIndex("class_name"));
+    }
+    
+    public int updateSubscriptionTime(String subskey,long last_update) {
+		ContentValues vals = new ContentValues();
+		vals.put("last_update", last_update);
+		return mDb.update(SUBSCRIPTIONS_TABLE, vals, "subskey='"+subskey+"'", null);
+    }
+    
+    public HashMap<String,String> getAllDueSubscriptions() {
+    	HashMap<String,String> subs = new HashMap<String,String>();
+    	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { KEY_ROWID, "subskey", "class_name"}, "last_update + poll_interval <= " + System.currentTimeMillis(), null, null, null, null);
+    	c.moveToFirst();
+    	while (!c.isAfterLast()) {
+    		subs.put(c.getString(c.getColumnIndex("subskey")),c.getString(c.getColumnIndex("class_name")));
+    		c.moveToNext();
+    	}
+    	return subs;
+    }
+    
+    public boolean subscriptionExists(String subskey) {
+    	return mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey" }, "subskey='" + subskey + "'", null, null, null, null).getCount() > 0;
+    }
+    
+    public Cursor fetchAllSubscriptions(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    	return mDb.query(SUBSCRIPTIONS_TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+    }
+    
+    public Cursor fetchSubscription(long row_id,String[] projection) {
+    	return mDb.query(SUBSCRIPTIONS_TABLE, projection, KEY_ROWID + "=" + row_id, null, null, null, null);
+    }
     
     //Knowledge Base Functions
     

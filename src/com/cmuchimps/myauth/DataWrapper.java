@@ -1,6 +1,7 @@
 package com.cmuchimps.myauth;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class DataWrapper {
@@ -136,6 +137,56 @@ public class DataWrapper {
 			if (index >= tag_indices.length) return null;
 			if (tags[index] == null) tags[index] = mDbHelper.getTag(tag_indices[index]);
 			return tags[index];
+		}
+		
+		public HashMap<String,HashMap<String,Integer>> createTagCounter() {
+			HashMap<String,HashMap<String,Integer>> tagCounter = new HashMap<String,HashMap<String,Integer>>();
+			Tag[] tags = getAllTags();
+			for (Tag t : tags) {
+				HashMap<String,Integer> tagMap = (tagCounter.get(t.tag_class) == null ? new HashMap<String,Integer>() : tagCounter.get(t.tag_class));
+				int counter = (tagMap.get(t.subclass) == null ? 0 : tagMap.get(t.subclass));
+				tagMap.put(t.subclass, counter + 1);
+				tagCounter.put(t.tag_class, tagMap);
+			}
+			return tagCounter;
+		}
+		
+		public boolean sameStructure(Fact other) {
+			HashMap<String,HashMap<String,Integer>> myTC = this.createTagCounter();
+			HashMap<String,HashMap<String,Integer>> otherTC = other.createTagCounter();
+			if (myTC.keySet().size() != otherTC.keySet().size()) return false;
+			for (String key : myTC.keySet()) {
+				HashMap<String,Integer> ot = null, my = myTC.get(key);
+				if ((ot = otherTC.get(key)) == null) return false;
+				for (String subkey : my.keySet()) {
+					Integer myCount = my.get(subkey), oCount;
+					if ((oCount = ot.get(subkey)) == null || myCount != oCount) return false;
+				}
+			}
+			return true; //passed all filters
+		}
+		
+		public boolean sameStructure(Fact other, boolean consider_sub) {
+			if (consider_sub) return sameStructure(other);
+			else {
+				HashMap<String,HashMap<String,Integer>> myTC = this.createTagCounter();
+				HashMap<String,HashMap<String,Integer>> otherTC = other.createTagCounter();
+				//Create tag_class only tag counter
+				if (myTC.keySet().size() != otherTC.keySet().size()) return false;
+				for (String s : myTC.keySet()) {
+					if (otherTC.get(s) == null) return false;
+					int myCount = 0;
+					for (String subkey : myTC.get(s).keySet()) {
+						myCount += myTC.get(s).get(subkey);
+					}
+					int oCount = 0;
+					for (String subkey : otherTC.get(s).keySet()) {
+						oCount += otherTC.get(s).get(subkey);
+					}
+					if (myCount != oCount) return false;
+				}
+				return true; //passed all filters
+			}
 		}
 		
 		public String toString(int tabprepend) {
@@ -363,6 +414,146 @@ public class DataWrapper {
 			if (index >= meta_indices.length) return null;
 			if (metas[index] == null) metas[index] = mDbHelper.getMeta(meta_indices[index]);
 			return metas[index];
+		}
+		
+		/**
+		 * Matches a question answer template to a fact. Untested!
+		 * @param fact
+		 * @return
+		 */
+		public Integer[] matches(Fact fact) {
+			HashMap<String,HashMap<String,Integer>> tagCounter = fact.createTagCounter();
+			//match all possible qconds/aconds with one possible instantiation right away
+			//match flexible ones using dynamic programming
+			//create all conds
+			int count = getAcond().getAllTags().length;
+			for (int i = 0; i < getAllQconds().length; i++) count += qconds[i].getAllTags().length;
+			Condition[] allconds = new Condition[count];
+			allconds[0] = new Condition(acond);
+			for (int i = 1; i < count; i++) allconds[i] = new Condition(getQcondAt(i-1));
+			
+			Integer[] matches = new Integer[count]; //will contain corresponding match for each condition
+			for (int i = 0; i < count; i++) matches[i] = -1;
+			
+			//create QAT condition x Fact Tag binary match table
+			int[][] qatbyfact = new int[allconds.length][fact.tags.length];
+			for (int i = 0; i < qatbyfact.length; i++) {
+				for (int j = 0; j < qatbyfact[0].length; j++) {
+					qatbyfact[i][j] = (allconds[i].matches(fact.getTagAt(j)) ? 1 : 0);
+				}
+			}
+			
+			//set all definite matches by finding rows in qatbyfact that only sum up to one
+			HashMap<Integer,Integer[]> mults = new HashMap<Integer,Integer[]>();
+			for (int i = 0; i < qatbyfact.length; i++) {
+				Integer[] matchingIdxs = UtilityFuncs.getMatches(qatbyfact[i]);
+				if (matchingIdxs.length == 0) {
+					System.out.println("No matching tag for qcond:" + (i == 0 ? getAcond().toString(0) : getQcondAt(i-1).toString(0)));
+					return null; //no matches found
+				} else if (matchingIdxs.length == 1) { //exactly one match found, must set to this
+					//decrement tag counter
+					Tag matched = fact.getTagAt(matchingIdxs[0]);
+					tagCounter.get(matched.tag_class).put(matched.subclass,tagCounter.get(matched.tag_class).get(matched.subclass) - 1); //not sure if this works, may need to put result back in parent HashMap
+					matches[i] = matchingIdxs[0];
+				} else { //multiple matches found
+					mults.put(i, matchingIdxs);
+				}
+			}
+			
+			//use dynamic programming to match multiple matches ideally
+			//first check if any multiple matches even exist
+			if (mults.keySet().size() == 0) {
+				boolean allmatched = true;
+				for (int i = 0; i < matches.length; i++)
+					allmatched = allmatched && matches[i] > 0;
+				if (allmatched) return matches; //all matches found and no multiple matches
+			}
+			
+			Integer[] keys = mults.keySet().toArray(new Integer[mults.keySet().size()]);
+			Arrays.sort(keys);
+			int[] minCounter = new int[keys.length];
+			for (int i = 0; i < minCounter.length; i++) minCounter[i] = 0;
+			int currentRow = 0; //current row of matrix
+			ArrayList<Integer> taken = new ArrayList<Integer>();
+			//keys contains the indices of all multiple matched conditions
+			while (minCounter[0] < mults.get(keys[0]).length) {
+				//first check if we need to backtrack
+				if (minCounter[currentRow] >= mults.get(keys[currentRow]).length) {
+					//must backtrack, tried all possibilities for this row in this config
+					taken.remove(taken.size()-1);
+					for (int i = currentRow; i < keys.length; i++) { //reset this row and all rows below
+						minCounter[i] = 0;
+					}
+					minCounter[--currentRow]++; //increment counter for previous row
+					continue;
+				}
+				
+				//now check if current condition matches a remaining fact tag
+				int tag_index_of_fact = mults.get(keys[currentRow])[minCounter[currentRow]];
+				if (taken.contains(tag_index_of_fact)) {
+					//if current fact tag already taken
+					minCounter[currentRow]++;
+					continue;
+				} else {
+					matches[keys[currentRow]] = tag_index_of_fact;
+					taken.add(tag_index_of_fact);
+					currentRow++;
+				}
+				
+				if (currentRow == keys.length) return matches;
+			}
+			
+			System.out.println("No matches found..no matches for mults");
+			return null;
+		}
+		
+		private class Condition {
+			Tag[] conds;
+			int counter;
+			
+			public Condition() {
+				initialize(new Tag[0], -1);
+			}
+			
+			public Condition(Qcond qcond) {
+				initialize(qcond.getAllTags(),0);
+			}
+			
+			public Condition(Acond acond) {
+				initialize(acond.getAllTags(),0);
+			}
+			
+			private void initialize(Tag[] cs, int c) {
+				conds = new Tag[cs.length];
+				for (int i = 0; i < cs.length; i++) conds[i] = cs[i];
+				counter = c;
+			}
+			
+			public boolean matches(Tag c) {
+				for (Tag cond : conds) {
+					if (cond.tag_class.equalsIgnoreCase(c.tag_class)) {
+						if (cond.subclass.equalsIgnoreCase("*") || cond.subclass.equalsIgnoreCase(c.subclass))
+							return true;
+					}
+				}
+				return false;
+			}
+			
+			public Tag getCurrent() {
+				return (finished() ? null : conds[counter]);
+			}
+			
+			public int length() {
+				return conds.length;
+			}
+			
+			public void reset() {
+				counter = 0;
+			}
+			
+			public boolean finished() {
+				return counter >= conds.length;
+			}
 		}
 		
 		/**

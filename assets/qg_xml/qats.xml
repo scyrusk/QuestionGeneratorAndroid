@@ -16,7 +16,7 @@
   </tns:QAT>
   
   <tns:QAT>
-	  <tns:QText>What (acond-subclass) application did you use on (time)?</tns:QText>
+	  <tns:QText>What (acond-subclass) application did you use on (time:date around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -30,7 +30,7 @@
   </tns:QAT>
   
   <tns:QAT>
-	  <tns:QText>Where were you at (time)?</tns:QText>
+	  <tns:QText>Where were you on (time:dow around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
