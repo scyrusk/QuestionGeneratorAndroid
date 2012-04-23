@@ -205,6 +205,39 @@ public class KBDbAdapter {
     	return mDb.query(TAG_CLASS_TABLE, new String[] {KEY_ROWID, "name"}, null, null, null, null, null);
     }
     
+    public long createFact(String timestamp, String dayOfWeek) {
+    	ContentValues fact_vals = new ContentValues();
+    	fact_vals.put("timestamp", UtilityFuncs.join(timestamp.split("T"), " "));
+    	fact_vals.put("dayOfWeek", dayOfWeek);
+    	return mDb.insert(FACTS_TABLE, null, fact_vals);
+    }
+    
+    public long createTag(String tag_class,String subclass,String subvalue,String idtype,long idval) {
+    	ContentValues tag_vals = new ContentValues();
+    	long tagclass_id = this.findTagClassByName(tag_class);
+		if (tagclass_id >= 0) 
+			tag_vals.put("tag_classid", tagclass_id);
+		else return -1;
+		
+		if (idtype.equalsIgnoreCase("factsid") || idtype.equalsIgnoreCase("qcondsid") || idtype.equalsIgnoreCase("acondsid"))
+			tag_vals.put(idtype, idval);
+		else return -1;
+		
+		tag_vals.put("subclass", subclass);
+		if (subvalue != null && !subvalue.equalsIgnoreCase("")) tag_vals.put("subvalue", subvalue);
+    	return mDb.insert(TAGS_TABLE, null, tag_vals);
+    }
+    
+    public long createMeta(String name, String value, String idtype, long idval) {
+    	ContentValues meta_values = new ContentValues();
+    	meta_values.put("name", name);
+    	if (value != null) meta_values.put("value", value);
+    	if (idtype.equalsIgnoreCase("factsid") || idtype.equalsIgnoreCase("qatid"))
+    		meta_values.put(idtype, idval);
+    	else return -1;
+    	return mDb.insert(META_TABLE, null, meta_values);
+    }
+    
     public long createFact(String timestamp, String dayOfWeek, ArrayList<HashMap<String,String>> tags, ArrayList<HashMap<String,String>> metas) {
     	/* Insert fact */
     	ContentValues fact_vals = new ContentValues();
@@ -469,13 +502,17 @@ public class KBDbAdapter {
     
     public HashMap<String,String> getAllDueSubscriptions() {
     	HashMap<String,String> subs = new HashMap<String,String>();
-    	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { KEY_ROWID, "subskey", "class_name"}, "last_update + poll_interval <= " + System.currentTimeMillis(), null, null, null, null);
+    	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { KEY_ROWID, "subskey", "class_name", "last_update", "poll_interval"}, "last_update + poll_interval <= " + System.currentTimeMillis(), null, null, null, null);
     	c.moveToFirst();
     	while (!c.isAfterLast()) {
     		subs.put(c.getString(c.getColumnIndex("subskey")),c.getString(c.getColumnIndex("class_name")));
     		c.moveToNext();
     	}
     	return subs;
+    }
+    
+    public Cursor fetchDueSubscriptions() {
+    	return mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "class_name", "last_update", "poll_interval"}, "last_update + poll_interval <= " + System.currentTimeMillis(), null, null, null, null);
     }
     
     public boolean subscriptionExists(String subskey) {

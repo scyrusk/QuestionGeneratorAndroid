@@ -13,8 +13,7 @@ public class SubscriptionReceiver extends BroadcastReceiver {
 		Log.d("SubscriptionReceiver","Attempting to update knowledge base");
 		System.out.println("Attempting to update knowledge base...");
 		Intent updater = new Intent(context,KnowledgeTranslatorWrapper.class);
-		updater.putExtra("dueSubs", intent.getStringArrayExtra("dueSubs"));
+		//updater.putExtra("dueSubs", intent.getStringArrayExtra("dueSubs"));
 		context.startService(updater);
 	}
-
 }

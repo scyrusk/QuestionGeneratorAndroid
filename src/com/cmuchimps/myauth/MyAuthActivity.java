@@ -34,7 +34,7 @@ import com.cmuchimps.myauth.QuestionGenerator.QuestionAnswerPair;
 public class MyAuthActivity extends Activity {
     /** Called when the activity is first created. */
 	private KBXMLParser mParser;
-	public static KBDbAdapter mDbHelper;
+	private KBDbAdapter mDbHelper;
 	private DataWrapper dw;
 	private QuestionGenerator qg;
 	private KnowledgeTranslatorWrapper ktw;
@@ -252,11 +252,11 @@ public class MyAuthActivity extends Activity {
      */
     private void setUpdaterAlarm() {
     	Intent updater = new Intent(this, SubscriptionReceiver.class);
-    	String[] dueSubs = mDbHelper.getAllDueSubscriptions().keySet().toArray(new String[mDbHelper.getAllDueSubscriptions().size()]);
-    	updater.putExtra("dueSubs", dueSubs);
-    	PendingIntent recurringUpdate = PendingIntent.getBroadcast(getApplicationContext(), 0, updater, PendingIntent.FLAG_UPDATE_CURRENT);
+    	//String[] dueSubs = mDbHelper.getAllDueSubscriptions().keySet().toArray(new String[mDbHelper.getAllDueSubscriptions().size()]);
+    	//updater.putExtra("dueSubs", dueSubs);
+    	PendingIntent recurringUpdate = PendingIntent.getBroadcast(getApplicationContext(), 0, updater, PendingIntent.FLAG_CANCEL_CURRENT);
     	AlarmManager alarms = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-    	alarms.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 10 * UtilityFuncs.MIN_TO_MILLIS, AlarmManager.INTERVAL_HOUR, recurringUpdate);
+    	alarms.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1 * UtilityFuncs.MIN_TO_MILLIS, AlarmManager.INTERVAL_HOUR, recurringUpdate);
     }
     
     /**
@@ -284,8 +284,8 @@ public class MyAuthActivity extends Activity {
      * Initializes subscriptions table.
      */
     private void createSensorSubscriptions() {
-    	String[] SensorSubscriptions = new String[] { "Communication", "InternetBrowsing", "Media", "UserDictionary", "Contact", "Calendar"};
-    	Long[] PollIntervals = new Long[] { 3l*UtilityFuncs.HOUR_TO_MILLIS, 3l*UtilityFuncs.DAY_TO_MILLIS, 1l*UtilityFuncs.DAY_TO_MILLIS, 7l*UtilityFuncs.DAY_TO_MILLIS, 3l*UtilityFuncs.DAY_TO_MILLIS, 7l*UtilityFuncs.DAY_TO_MILLIS};
+    	String[] SensorSubscriptions = new String[] { "Communication", "InternetBrowsing", "Media", "UserDictionary", "Contact", "Calendar", "ApplicationUse", "Location"};
+    	Long[] PollIntervals = new Long[] { 3l*UtilityFuncs.HOUR_TO_MILLIS, 3l*UtilityFuncs.DAY_TO_MILLIS, 1l*UtilityFuncs.DAY_TO_MILLIS, 7l*UtilityFuncs.DAY_TO_MILLIS, 3l*UtilityFuncs.DAY_TO_MILLIS, 7l*UtilityFuncs.DAY_TO_MILLIS, 30l*UtilityFuncs.MIN_TO_MILLIS, 30l*UtilityFuncs.MIN_TO_MILLIS};
     	
     	for (int i = 0; i < SensorSubscriptions.length; i++) {
 			if (!mDbHelper.subscriptionExists(SensorSubscriptions[i])) {

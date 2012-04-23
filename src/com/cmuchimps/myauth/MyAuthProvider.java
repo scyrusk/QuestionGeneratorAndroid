@@ -20,16 +20,24 @@ public class MyAuthProvider extends ContentProvider {
 	private static final String AUTHORITY = "com.cmuchimps.myauth.MyAuthProvider";
 	private static final String SUBSCRIPTIONS_BASE_PATH = "subscriptions";
 	private static final String FACTS_BASE_PATH = "facts";
+	private static final String TAGS_BASE_PATH = "tags";
+	private static final String METAS_BASE_PATH = "metas";
 	
 	public static final String[] FACTS_PROJECTION = { "sup" };
 	public static final String[] SUBSCRIPTIONS_PROJECTION = { };
 	public static final int SUBSCRIPTIONS = 1;
 	public static final int SUBSCRIPTIONS_ID = 2;
-	public static final int FACTS = 3;
-	public static final int FACTS_ID = 4;
-	public static final Uri SUBSCRIPTIONS_CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" + SUBSCRIPTIONS_BASE_PATH);
-	public static final Uri FACTS_CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" + FACTS_BASE_PATH);
+	public static final int SUBSCRIPTIONS_DUE = 3;
+	public static final int FACTS = 4;
+	public static final int FACTS_ID = 5;
+	public static final int TAGS = 6;
+	public static final int METAS = 7;
 	
+	public static final Uri SUBSCRIPTIONS_CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" + SUBSCRIPTIONS_BASE_PATH);
+	public static final Uri SUBSCRIPTIONS_DUE_URI = Uri.parse("content://" + AUTHORITY + "/" + SUBSCRIPTIONS_BASE_PATH + "/due");
+	public static final Uri FACTS_CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" + FACTS_BASE_PATH);
+	public static final Uri TAGS_CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" + TAGS_BASE_PATH);
+	public static final Uri METAS_CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" +  METAS_BASE_PATH);
 	
 	public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE
 	        + "/mt-subscription";
@@ -40,8 +48,11 @@ public class MyAuthProvider extends ContentProvider {
 	static {
 		sURIMatcher.addURI(AUTHORITY, SUBSCRIPTIONS_BASE_PATH, SUBSCRIPTIONS);
 		sURIMatcher.addURI(AUTHORITY, SUBSCRIPTIONS_BASE_PATH + "/#", SUBSCRIPTIONS_ID);
+		sURIMatcher.addURI(AUTHORITY, SUBSCRIPTIONS_BASE_PATH + "/due", SUBSCRIPTIONS_DUE);
 		sURIMatcher.addURI(AUTHORITY, FACTS_BASE_PATH, FACTS);
 		sURIMatcher.addURI(AUTHORITY, FACTS_BASE_PATH + "/#", FACTS_ID);
+		sURIMatcher.addURI(AUTHORITY, TAGS_BASE_PATH, TAGS);
+		sURIMatcher.addURI(AUTHORITY, METAS_BASE_PATH, METAS);
 	}
 	
 	@Override
@@ -65,9 +76,7 @@ public class MyAuthProvider extends ContentProvider {
 		case FACTS:
 			//separate tags and metas
 			String timestamp = values.getAsString("timestamp"), dayOfWeek = values.getAsString("dayOfWeek");
-			ArrayList<HashMap<String,String>> tags = (ArrayList<HashMap<String,String>>) values.get("tags");
-			ArrayList<HashMap<String,String>> metas = (ArrayList<HashMap<String,String>>) values.get("metas");
-			long _fact_id = mDbHelper.createFact(timestamp, dayOfWeek, tags, metas);
+			long _fact_id = mDbHelper.createFact(timestamp, dayOfWeek);
 			mNewUri = Uri.parse(FACTS_CONTENT_URI + "/" + _fact_id);
 			break;
 		case SUBSCRIPTIONS:
@@ -76,6 +85,19 @@ public class MyAuthProvider extends ContentProvider {
 			long _subs_id = mDbHelper.createSubscription(subskey, poll_interval, last_update, class_name);
 			mNewUri = Uri.parse(FACTS_CONTENT_URI + "/" + _subs_id);
 			break;
+		case TAGS:
+			String tag_class = values.getAsString("tag_class"),subclass = values.getAsString("subclass"),subvalue = (values.containsKey("subvalue") ? values.getAsString("subvalue") : ""),tag_idtype = (values.getAsString("idtype"));
+			long tag_idval = values.getAsLong("idval");
+			long _tags_id = mDbHelper.createTag(tag_class, subclass, subvalue, tag_idtype, tag_idval);
+			mNewUri = Uri.parse(TAGS_CONTENT_URI + "/" + _tags_id);
+			break;
+		case METAS:
+			String name = values.getAsString("name"), value = (values.containsKey("value") ? values.getAsString("value") : ""), meta_idtype = values.getAsString("idtype");
+			long meta_idval = values.getAsLong("idval");
+			long _metas_id = mDbHelper.createMeta(name, value, meta_idtype, meta_idval);
+			mNewUri = Uri.parse(METAS_CONTENT_URI + "/" + _metas_id);
+			break;
+			
 		default:
 			throw new IllegalArgumentException("Unknown URI.");
 		}
@@ -90,14 +112,14 @@ public class MyAuthProvider extends ContentProvider {
 		return true;
 	}
 	/**
-	 * Note, right now this doesn't consider relations at all so it's pretty useless.
+	 * Note, for facts, right now this doesn't consider relations at all so it's pretty useless.
 	 * Will have to change to make it useful by running a giant JOIN query on facts, tags etc.
 	 * Note: MUST call cursor.getDatabase().close() after use.
 	 */
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
-		
+		System.out.println("Content provider query URI : " + uri.toString());
 		int uriType = sURIMatcher.match(uri);
 		Cursor c = null;
 		
@@ -113,6 +135,9 @@ public class MyAuthProvider extends ContentProvider {
 			break;
 		case SUBSCRIPTIONS_ID:
 			c = mDbHelper.fetchSubscription(Long.parseLong(uri.getLastPathSegment()), projection);
+			break;
+		case SUBSCRIPTIONS_DUE:
+			c = mDbHelper.fetchDueSubscriptions();
 			break;
 		default:
 			throw new IllegalArgumentException("Unknown URI.");
