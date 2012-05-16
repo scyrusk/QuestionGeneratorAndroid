@@ -2,3 +2,6 @@ Person
 Activity
 Application
 Location
+Phonecall
+SmsMessage
+Internet

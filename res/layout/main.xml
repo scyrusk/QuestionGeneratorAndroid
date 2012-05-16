@@ -36,4 +36,16 @@
 	        android:layout_height="wrap_content"
 	        android:text="New Question" />
 	</LinearLayout>
+	
+	<Button
+	   	android:id="@+id/pollAll"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:text="Poll Knowledge Subscriptions"/>
+	
+	<Button
+	   	android:id="@+id/printFacts"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:text="Print all facts to console"/>
 </LinearLayout>

@@ -28,6 +28,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.cmuchimps.myauth.DataWrapper.Fact;
 import com.cmuchimps.myauth.KnowledgeTranslatorWrapper.KnowledgeSubscription;
 import com.cmuchimps.myauth.QuestionGenerator.QuestionAnswerPair;
 
@@ -38,6 +39,7 @@ public class MyAuthActivity extends Activity {
 	private DataWrapper dw;
 	private QuestionGenerator qg;
 	private KnowledgeTranslatorWrapper ktw;
+	private int pollAllMenuId;
 	
 	public static final Random r = new Random();
 	private QuestionAnswerPair currQ;
@@ -48,6 +50,8 @@ public class MyAuthActivity extends Activity {
 	TextView output;
 	Button submit;
 	Button newq;
+	Button pollAll;
+	Button printFacts;
 	
 	//private final int seed;
     @Override
@@ -58,18 +62,22 @@ public class MyAuthActivity extends Activity {
         output = (TextView)this.findViewById(R.id.output);
         submit = (Button)this.findViewById(R.id.submit);
         newq = (Button)this.findViewById(R.id.newq);
+        pollAll = (Button)this.findViewById(R.id.pollAll);
+        printFacts = (Button)this.findViewById(R.id.printFacts);
+        
         final EditText input = (EditText)this.findViewById(R.id.input);
 
         submit.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
-				if (currQ.getAnswers().contains(input.getText().toString())) {
+				if (currQ.matches(input.getText().toString())) {
 					Toast.makeText(getApplicationContext(), "Correct Answer!", Toast.LENGTH_SHORT).show();
 					input.setText("");
 					askQuestion();
 				} else {
-					Toast.makeText(getApplicationContext(), "Incorrect Answer!", Toast.LENGTH_SHORT).show();
+					String[] answers = currQ.getAnswers().toArray(new String[currQ.getAnswers().size()]);
+					Toast.makeText(getApplicationContext(), "Incorrect Answer! Acceptable answers were: " + UtilityFuncs.join(answers, ","), Toast.LENGTH_SHORT).show();
 				}
 			}
      
@@ -82,10 +90,30 @@ public class MyAuthActivity extends Activity {
 				input.setText("");
 				askQuestion();
 			}
-        	
         });
         
+        pollAll.setOnClickListener(new OnClickListener() {
+        	@Override
+        	public void onClick(View arg0) {
+        		/*Cursor temp = getContentResolver().query(CallLog.Calls.CONTENT_URI, new String[] { Calls.DATE, Calls.NUMBER, Calls.DURATION, Calls.TYPE, Calls.CACHED_NAME}, null, null, null);
+        		if (temp != null && temp.getCount() > 0) {
+        			temp.moveToFirst();
+        			while (!temp.isAfterLast()) {
+        				System.out.println("Date in millis: " + temp.getString(temp.getColumnIndex(Calls.DATE)));
+        				temp.moveToNext();
+        			}
+        		}*/
+        		forcePollSubscriptions();
+        	}
+        });
         
+        printFacts.setOnClickListener(new OnClickListener() {
+        	public void onClick(View arg0) {
+        		printFacts(mDbHelper.getAllFacts());
+        	}
+        });
+        
+        //this.deleteDB();
         this.mDbHelper = new KBDbAdapter(this);
         this.mDbHelper.open();
         //this.repopulateDB();
@@ -94,34 +122,20 @@ public class MyAuthActivity extends Activity {
         this.lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
         this.ktw = new KnowledgeTranslatorWrapper();
         this.setUpdaterAlarm();
-        //need to figure out how to call update on a separate thread
-        
-        //initializeLocationListener();
-        //this.getSystemService(Context.)
-        
-        //Long[] ff = mDbHelper.getFilteredFactsByTime(24*60*60*1000,mDbHelper.getFact(facts[1]).getTimestamp());
-        //Long[] ff = mDbHelper.getFilteredFactsByTag(new String[] {"Application:Game", "Application:Communication"});
-        /*Long[] fq = mDbHelper.getFilteredQats(null, new String[] { "Application", "Location" });
-        System.out.println("Count: " + fq.length);
-        for (Long l : fq) {
-            System.out.println(mDbHelper.getQAT(l));
-        }
-        System.out.println("");*/
-        //System.out.println(mDbHelper.getQAT(2));
-        /*Fact fact = mDbHelper.getFact(facts[r.nextInt(facts.length)]);
-        System.out.println("Chosen Fact::");
-        System.out.println(fact);
-        HashMap<Long,Integer[]> fqats = new HashMap<Long,Integer[]>();
-        for (Long l : qats) {
-        	Integer[] result = mDbHelper.getQAT(l).matches(fact);
-        	if (result != null) {
-        		fqats.put(l, result);
-        	}
-        }
-        System.out.println("Macthing QATS:");
-        for (Long l : fqats.keySet()) {
-        	System.out.println(mDbHelper.getQAT(l));
-        }*/
+        /*System.out.println("Testing QAT-Fact");
+        ArrayList<Fact> testFacts = new ArrayList<Fact>();
+        testFacts.add(mDbHelper.getFact(64l));
+        System.out.println("QText := " + mDbHelper.getQAT(6l).getQText());
+        this.qg.testQATagainstFacts(mDbHelper.getQAT(6l), testFacts);
+        System.out.println("Ending QAT-Fact test");*/
+        //this.forcePollSubscriptions();
+        UtilityFuncs.TestingFLEXJson();
+    }
+    
+    @Override
+    public void onResume() {
+    	super.onResume();
+    	this.setUpdaterAlarm();
     }
     
     private void initializeLocationListener() {
@@ -209,7 +223,6 @@ public class MyAuthActivity extends Activity {
     }
     
     private void repopulateDB() {
-    	
         try {
 			this.populateTagClasses(this.getAssets().open("qg_other_files/tag_classes.txt"));
 		} catch (IOException e) {
@@ -252,11 +265,10 @@ public class MyAuthActivity extends Activity {
      */
     private void setUpdaterAlarm() {
     	Intent updater = new Intent(this, SubscriptionReceiver.class);
-    	//String[] dueSubs = mDbHelper.getAllDueSubscriptions().keySet().toArray(new String[mDbHelper.getAllDueSubscriptions().size()]);
-    	//updater.putExtra("dueSubs", dueSubs);
     	PendingIntent recurringUpdate = PendingIntent.getBroadcast(getApplicationContext(), 0, updater, PendingIntent.FLAG_CANCEL_CURRENT);
     	AlarmManager alarms = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-    	alarms.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1 * UtilityFuncs.MIN_TO_MILLIS, AlarmManager.INTERVAL_HOUR, recurringUpdate);
+    	//alarms.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1 * UtilityFuncs.MIN_TO_MILLIS, 10l*UtilityFuncs.MIN_TO_MILLIS, recurringUpdate);
+    	alarms.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1 * UtilityFuncs.MIN_TO_MILLIS, 10l*UtilityFuncs.MIN_TO_MILLIS, recurringUpdate);
     }
     
     /**
@@ -274,6 +286,18 @@ public class MyAuthActivity extends Activity {
      */
     private void forcePollSubscriptions() {
     	System.out.println("Entering force poll subscriptions...");
+    	/*Cursor c = mDbHelper.fetchAllSubscriptions(new String[] { "subskey", "class_name", "last_update", "poll_interval"}, null, null, null);
+    	//System.out.println("Current time millis: " + System.currentTimeMillis());
+    	if (c.getCount() > 0) {
+    		c.moveToFirst();
+    		while (!c.isAfterLast()) {
+    			for (int i = 0; i < c.getColumnCount(); i++) {
+    				System.out.print(c.getString(i) + ",");
+    			}
+    			System.out.println();
+    			c.moveToNext();
+    		}
+    	}*/
     	Intent updater = new Intent(this, KnowledgeTranslatorWrapper.class);
     	String[] dueSubs = mDbHelper.getAllSubscriptions().keySet().toArray(new String[mDbHelper.getAllSubscriptions().size()]);
     	updater.putExtra("dueSubs", dueSubs);
@@ -289,8 +313,8 @@ public class MyAuthActivity extends Activity {
     	
     	for (int i = 0; i < SensorSubscriptions.length; i++) {
 			if (!mDbHelper.subscriptionExists(SensorSubscriptions[i])) {
-				System.out.println(System.currentTimeMillis());
-				mDbHelper.createSubscription(SensorSubscriptions[i], PollIntervals[i], System.currentTimeMillis(), "com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + SensorSubscriptions[i] + "KnowledgeSubscription");
+				//System.out.println(System.currentTimeMillis());
+				mDbHelper.createSubscription(SensorSubscriptions[i], PollIntervals[i], System.currentTimeMillis() - (1*UtilityFuncs.DAY_TO_MILLIS), "com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + SensorSubscriptions[i] + "KnowledgeSubscription");
 				try {
 					Class c = Class.forName("com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + SensorSubscriptions[i] + "KnowledgeSubscription");
 					if (!(Modifier.isStatic(c.getModifiers()) || Modifier.isAbstract(c.getModifiers()))) {

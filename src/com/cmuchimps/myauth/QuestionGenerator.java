@@ -3,10 +3,10 @@ package com.cmuchimps.myauth;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import com.cmuchimps.myauth.DataWrapper.Fact;
 import com.cmuchimps.myauth.DataWrapper.QAT;
-import com.cmuchimps.myauth.DataWrapper.Tag;
 
 public class QuestionGenerator {
 	private KBDbAdapter mDbHelper;
@@ -43,6 +43,12 @@ public class QuestionGenerator {
 		public String getQuestion() { return question; }
 		public HashMap<String,Float> getAllAnswers() { return answers; }
 		public ArrayList<String> getAnswers() { return new ArrayList<String>(answers.keySet()); }
+		public boolean matches(String answer) {
+			for (String potential : answers.keySet()) {
+				if (potential.equalsIgnoreCase(answer)) return true;
+			}
+			return false;
+		}
 	}
 	
 	public QuestionGenerator(KBDbAdapter kbdb, DataWrapper ddub) {
@@ -50,18 +56,55 @@ public class QuestionGenerator {
 		dw = ddub;
 	}
 	
+	public void testQATagainstFacts(QAT theQat,List<Fact> facts) {
+		for (Fact fact : facts) {
+			Integer[] result = theQat.matches(fact);
+			if (result != null) {
+				System.out.println("matches!");
+			} else {
+				System.out.println("no match!");
+			}
+		}
+	}
+	
 	public QuestionAnswerPair askQuestion() {
 		Long[] qats = mDbHelper.getAllQATs();
 		Long[] afacts = mDbHelper.getAllFacts();
 		ArrayList<Long> facts = new ArrayList<Long>();
-		System.out.println("length of afacts:" + afacts.length);
-		Long[] temp = mDbHelper.getFilteredFactsByTime(24*60*60*1000, mDbHelper.getFact(afacts[MyAuthActivity.r.nextInt(afacts.length)]).getTimestamp());
+		//System.out.println("length of afacts:" + afacts.length);
+		//Long[] temp = mDbHelper.getFilteredFactsByTime(24*60*60*1000, mDbHelper.getFact(afacts[MyAuthActivity.r.nextInt(afacts.length)]).getTimestamp());
+		Long[] temp = mDbHelper.getFilteredFactsByTime(24*60*60*1000, "*");
+		//Long[] temp = afacts;
+		HashMap<Fact,ArrayList<Long>> factCompression = new HashMap<Fact,ArrayList<Long>>();
+		for (Long l : temp) {
+			Fact curr = mDbHelper.getFact(l);
+			Fact matched = null;
+			for (Fact existing : factCompression.keySet()) {
+				if (existing.sameStructure(curr, true)) {
+					matched = existing;
+					break;
+				}
+			}
+			ArrayList<Long> toAdd = (matched == null? new ArrayList<Long>() : factCompression.get(matched));
+			Fact key = (matched == null ? curr : matched);
+			toAdd.add(l);
+			factCompression.put(key, toAdd);	
+		}
+		//Long[] temp = afacts;
 		for (Long l : temp) { facts.add(l); }
-		System.out.println("Number of qualifying facts: " + facts.size());
+		System.out.println("Sup, here are the different types of facts (" + factCompression.size() + "):");
+		for (Fact f : factCompression.keySet()) {
+			System.out.println(f);
+			System.out.println("****" + factCompression.get(f).size() + "****");
+		}
+		//System.out.println("Number of qualifying facts: " + facts.size());
 		while (facts.size() > 0) {
-			int index = MyAuthActivity.r.nextInt(facts.size());
-			Fact fact = mDbHelper.getFact(facts.get(index));
+			int index = MyAuthActivity.r.nextInt(factCompression.size());
+			ArrayList<Long> simFactStructures = factCompression.get(factCompression.keySet().toArray(new Fact[factCompression.size()])[index]);
+			index = MyAuthActivity.r.nextInt(simFactStructures.size());
+			Fact fact = mDbHelper.getFact(simFactStructures.get(index));
 			HashMap<Long,Integer[]> fqats = new HashMap<Long,Integer[]>();
+			System.out.println(fact.toString(0));
 	        for (Long l : qats) {
 	        	Integer[] result = mDbHelper.getQAT(l).matches(fact);
 	        	if (result != null) {
@@ -114,7 +157,7 @@ public class QuestionGenerator {
 				for (int i = 1; i < matches.length; i++) {
 					int refVal = i - 1;
 					//replace all instances of {refVal} in qtext with fact.getTagsAt(i).getSV();
-					question.replaceAll("{" + refVal + "}", fact.getTagAt(i).getSV());
+					question.replaceAll("\\{" + refVal + "\\}", fact.getTagAt(i).getSV());
 				}
 				//Substitute substructs
 				question = question.replaceAll("\\(acond-subclass\\)",fact.getTagAt(matches[0]).getSC());
@@ -153,12 +196,13 @@ public class QuestionGenerator {
 				//hour of day
 				String hod = fact.getTimestamp().split("[T ]")[1].split(":")[0];
 				int i = Integer.parseInt(hod);
+				System.out.println("Hour of day val:" + i);
 				String ampm = "am";
-				if (i > 12) {
+				if (i >= 12) {
 					ampm = "pm";
 					i -= 12;
 				}
-				retVal.append(i + ampm);
+				retVal.append((i == 0 ? "midnight" : (i == 12 ? "noon" : i + ampm)));
 			} else {
 				retVal.append(s);
 			}

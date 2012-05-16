@@ -512,7 +512,8 @@ public class KBDbAdapter {
     }
     
     public Cursor fetchDueSubscriptions() {
-    	return mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "class_name", "last_update", "poll_interval"}, "last_update + poll_interval <= " + System.currentTimeMillis(), null, null, null, null);
+    	return mDb.rawQuery("select subskey,class_name,last_update,poll_interval from " + SUBSCRIPTIONS_TABLE + " where (last_update + poll_interval) < " + System.currentTimeMillis(), null);
+    	//return mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "class_name", "last_update", "poll_interval"}, "(last_update + poll_interval) <= " + System.currentTimeMillis(), null, null, null, null);
     }
     
     public boolean subscriptionExists(String subskey) {
@@ -589,7 +590,7 @@ public class KBDbAdapter {
     		refNum = c.getInt(c.getColumnIndex("refnum"));
     	}
     	//get tags
-    	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "acondsid"}, "acondsid="+row_id, null, null, null, null);
+    	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "qcondsid"}, "qcondsid="+row_id, null, null, null, null);
     	if (c.getCount() > 0) {
     		ti = this.getIndicesFromCursor(c);
     	}

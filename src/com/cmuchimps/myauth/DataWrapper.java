@@ -391,6 +391,7 @@ public class DataWrapper {
 		}
 		
 		public Qcond getQcondAt(int index) {
+			System.out.println("Fetching Qcond at: " + index + ", which corresponds to DB qcond at : " + qcond_indices[index]);
 			if (index >= qcond_indices.length) return null;
 			if (qconds[index] == null) qconds[index] = mDbHelper.getQcond(qcond_indices[index]);
 			return qconds[index];
@@ -422,6 +423,7 @@ public class DataWrapper {
 		 * @return
 		 */
 		public Integer[] matches(Fact fact) {
+			System.out.println("Qtext = " + qtext);
 			HashMap<String,HashMap<String,Integer>> tagCounter = fact.createTagCounter();
 			//match all possible qconds/aconds with one possible instantiation right away
 			//match flexible ones using dynamic programming
@@ -448,7 +450,7 @@ public class DataWrapper {
 			for (int i = 0; i < qatbyfact.length; i++) {
 				Integer[] matchingIdxs = UtilityFuncs.getMatches(qatbyfact[i]);
 				if (matchingIdxs.length == 0) {
-					System.out.println("No matching tag for qcond:" + (i == 0 ? getAcond().toString(0) : getQcondAt(i-1).toString(0)));
+					System.out.println("(" + i + "): No matching tag for " + (i == 0 ? getAcond().toString(0) : getQcondAt(i-1).toString(0)));
 					return null; //no matches found
 				} else if (matchingIdxs.length == 1) { //exactly one match found, must set to this
 					//decrement tag counter

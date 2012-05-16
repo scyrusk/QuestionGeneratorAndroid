@@ -26,8 +26,11 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.RECEIVE_MMS"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.READ_USER_DICTIONARY"/>
     <uses-permission android:name="android.permission.SUBSCRIBED_FEEDS_READ"/>
     <uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     
     
     
@@ -50,7 +53,11 @@
         <receiver
     		android:name=".SubscriptionReceiver"
     		android:enabled="true"></receiver>
-    
+    	<receiver android:name=".BootReceiver">
+        <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED" />
+        </intent-filter>
+    	</receiver>
     	<provider
     		android:authorities="com.cmuchimps.myauth.MyAuthProvider"
     		android:multiprocess="true"

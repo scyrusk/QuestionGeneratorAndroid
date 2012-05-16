@@ -137,6 +137,7 @@ public class MyAuthProvider extends ContentProvider {
 			c = mDbHelper.fetchSubscription(Long.parseLong(uri.getLastPathSegment()), projection);
 			break;
 		case SUBSCRIPTIONS_DUE:
+			System.out.println("MyAuthProvider::fetching due subscriptions from query method");
 			c = mDbHelper.fetchDueSubscriptions();
 			break;
 		default:

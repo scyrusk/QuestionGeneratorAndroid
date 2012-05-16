@@ -1,8 +1,14 @@
 package com.cmuchimps.myauth;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+
+import flexjson.JSONDeserializer;
+import flexjson.JSONSerializer;
 
 public class UtilityFuncs {
 	public static final int MS_PER_SEC = 1000;
@@ -93,5 +99,59 @@ public class UtilityFuncs {
 		for (int i = 0; i < arr.length; i++) 
 			if (arr[i] == 1) retVal.add(i);
 		return retVal.toArray(new Integer[retVal.size()]);
+	}
+	
+	public static HashMap<String,String> duplicateMap(HashMap<String,String> initial) {
+		HashMap<String,String> retVal = new HashMap<String,String>();
+		for (String k : initial.keySet()) 
+			retVal.put(k, initial.get(k));
+		return retVal;
+	}
+	
+	public static String convertStreamToString(BufferedReader is) {
+		StringBuffer sb = new StringBuffer();
+		String input;
+		try {
+			while ((input = is.readLine()) != null) 
+				sb.append(input);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return sb.toString();
+	}
+	
+	public static void TestingFLEXJson() {
+		try {
+			HashMap<String,String> qs = new HashMap<String,String>();
+			qs.put("timeInQ", "11am");
+			qs.put("qatid","6");
+			ArrayList<HashMap<String,String>> answers = new ArrayList<HashMap<String,String>>();
+			HashMap<String,String> answer = new HashMap<String,String>();
+			answer.put("exact", "true");
+			answer.put("timestamp", "12am");
+			answer.put("value", "abc");
+			answers.add(answer);
+			answer = new HashMap<String,String>();
+			answer.put("exact", "false");
+			answer.put("timestamp", "1am");
+			answer.put("value", "def");
+			answers.add(answer);
+			HashMap<String,String> supp = new HashMap<String,String>();
+			supp.put("How easy was it for you to recall the answer to this question?", "5");
+			supp.put("How confident are you in your answer?", "5");
+			TransmissionPacket temp = new TransmissionPacket("Who what when where how at 11am?",qs,answers,"abc",supp,"now");
+			ArrayList<TransmissionPacket> hi = new ArrayList<TransmissionPacket>();
+			//hi.add(temp);
+			System.out.println("Before:");
+			System.out.println(temp);
+		    String s = new JSONSerializer().deepSerialize(hi,new StringBuffer());
+		    System.out.println("Serialized = " + s);
+		    ArrayList<TransmissionPacket> response = new JSONDeserializer<ArrayList<TransmissionPacket>>().deserialize(s, ArrayList.class );
+		    System.out.println(response.size() + " transmission packets!");
+		    for (TransmissionPacket tp : response)
+		    	System.out.println(tp);
+		 } catch (Exception e) {
+			 e.printStackTrace();
+		 }
 	}
 }

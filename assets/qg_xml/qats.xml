@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tns:QATs xmlns:tns="http://www.sauvik.me/QuestionAnswerTemplate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sauvik.me/QuestionAnswerTemplate QuestionAnswerTemplate.xsd ">
   <tns:QAT>
-	  <tns:QText>What application did you use on (time)?</tns:QText>
+	  <tns:QText>What application did you use on (time:date around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -30,14 +30,138 @@
   </tns:QAT>
   
   <tns:QAT>
-	  <tns:QText>Where were you on (time:dow around hod)?</tns:QText>
+	  <tns:QText>Where were you on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
 	    </tns:Descriptions>
 	    <tns:Tag>
 	      <tns:Class>Location</tns:Class>
-	      <tns:SubClass>*</tns:SubClass>
+	      <tns:SubClass>Geopoint</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds>
+	  	<tns:Qcond>
+	  	    <tns:RefNum>-1</tns:RefNum>
+	  	    <tns:Tag>
+	  	        <tns:Class>Location</tns:Class>
+	  	        <tns:SubClass>Provider</tns:SubClass>
+	  	    </tns:Tag>
+	  	</tns:Qcond>    
+	  </tns:Qconds>
+  </tns:QAT>
+  
+  <tns:QAT>
+	  <tns:QText>Who did you call on (time:dow around hod)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Person</tns:Class>
+	      <tns:SubClass>Contact</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds>
+	  	<tns:Qcond>
+	  	    <tns:RefNum>-1</tns:RefNum>
+	  	    <tns:Tag>
+	  	        <tns:Class>Phonecall</tns:Class>
+	  	        <tns:SubClass>Outgoing</tns:SubClass>
+	  	    </tns:Tag>
+	  	</tns:Qcond>    
+	  </tns:Qconds>
+  </tns:QAT>
+  
+  <tns:QAT>
+	  <tns:QText>Who called you on (time:dow around hod)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Person</tns:Class>
+	      <tns:SubClass>Contact</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds>
+	  	<tns:Qcond>
+	  	    <tns:RefNum>-1</tns:RefNum>
+	  	    <tns:Tag>
+	  	        <tns:Class>Phonecall</tns:Class>
+	  	        <tns:SubClass>Incoming</tns:SubClass>
+	  	    </tns:Tag>
+	  	</tns:Qcond>    
+	  </tns:Qconds>
+  </tns:QAT>
+  
+  <tns:QAT>
+	  <tns:QText>Who did you SMS message on (time:dow around hod)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Person</tns:Class>
+	      <tns:SubClass>Contact</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds>
+	  	<tns:Qcond>
+	  	    <tns:RefNum>-1</tns:RefNum>
+	  	    <tns:Tag>
+	  	        <tns:Class>SmsMessage</tns:Class>
+	  	        <tns:SubClass>Outgoing</tns:SubClass>
+	  	    </tns:Tag>
+	  	</tns:Qcond>    
+	  </tns:Qconds>
+  </tns:QAT>
+  
+  <tns:QAT>
+	  <tns:QText>Who SMS messaged you on (time:dow , date , around hod)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Person</tns:Class>
+	      <tns:SubClass>Contact</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds>
+	  	<tns:Qcond>
+	  	    <tns:RefNum>-1</tns:RefNum>
+	  	    <tns:Tag>
+	  	        <tns:Class>SmsMessage</tns:Class>
+	  	        <tns:SubClass>Incoming</tns:SubClass>
+	  	    </tns:Tag>
+	  	</tns:Qcond>    
+	  </tns:Qconds>
+  </tns:QAT>
+  
+  <tns:QAT>
+	  <tns:QText>What did you search the internet for on (time:dow , date)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Internet</tns:Class>
+	      <tns:SubClass>Search</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds/>
+  </tns:QAT>
+  
+  <tns:QAT>
+	  <tns:QText>What website did you visit on (time:dow)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Internet</tns:Class>
+	      <tns:SubClass>Visited-Site-Title</tns:SubClass>
 	    </tns:Tag>
 	  </tns:Acond>
 	  <tns:Qconds/>
