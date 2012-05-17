@@ -7,7 +7,8 @@ import java.util.HashMap;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 
-public class TransmissionPacket {
+public class TransmissionPacket extends TransmittablePacket {
+	public String user_id;
 	public String qtext;
 	public HashMap<String,String> question;
 	public ArrayList<HashMap<String,String>> answers;
@@ -24,6 +25,7 @@ public class TransmissionPacket {
 	}
 	
 	private void initialize(String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
+		typeid = 1;
 		qtext = new String(qt);
 		question = UtilityFuncs.duplicateMap(qs);
 		answers = new ArrayList<HashMap<String,String>>();
@@ -48,6 +50,7 @@ public class TransmissionPacket {
 	
 	public HttpParams convertToParams() {
 		HttpParams retVal = new BasicHttpParams();
+		retVal.setParameter("type", typeid);
 		retVal.setParameter("qtext", qtext);
 		retVal.setParameter("user_answer", user_answer);
 		retVal.setParameter("timestamp", timestamp);

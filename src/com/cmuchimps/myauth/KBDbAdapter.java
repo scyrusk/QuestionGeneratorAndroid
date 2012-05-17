@@ -511,6 +511,16 @@ public class KBDbAdapter {
     	return subs;
     }
     
+    public long getSubscriptionDueTimeFor(String subskey) {
+    	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "last_update", "poll_interval" }, "subskey = '" + subskey + "'", null, null, null, null);
+    	if (c.getCount() > 0) {
+    		c.moveToFirst();
+    		return c.getLong(c.getColumnIndex("last_update")) + c.getLong(c.getColumnIndex("poll_interval"));
+    	} else {
+    		return -1l;
+    	}
+    }
+    
     public Cursor fetchDueSubscriptions() {
     	return mDb.rawQuery("select subskey,class_name,last_update,poll_interval from " + SUBSCRIPTIONS_TABLE + " where (last_update + poll_interval) < " + System.currentTimeMillis(), null);
     	//return mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "class_name", "last_update", "poll_interval"}, "(last_update + poll_interval) <= " + System.currentTimeMillis(), null, null, null, null);

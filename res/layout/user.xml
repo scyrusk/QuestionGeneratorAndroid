@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <TextView 
+        android:id="@+id/u_instructions"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" 
+        android:paddingLeft="5dp"
+        android:gravity="center"
+        android:text="@string/user_form_prompt"/>
+    <TextView
+        android:id="@+id/un_label"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingLeft="5dp"
+        android:text="@string/UA_name_prompt" />
+
+    <EditText
+        android:id="@+id/name_entry"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:gravity="left|center_vertical" >
+
+        <requestFocus />
+    </EditText>
+	
+    <TextView
+        android:id="@+id/ue_label"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingLeft="5dp"
+        android:text="@string/UA_email_prompt" />
+    
+    <EditText
+        android:id="@+id/email_entry"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:gravity="left|center_vertical"/>
+    
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+	    <LinearLayout
+	        android:layout_width="100dp"
+	        android:layout_height="wrap_content"
+	        android:orientation="vertical">
+	        <TextView
+	        	android:id="@+id/ua_label"
+	        	android:layout_width="fill_parent"
+	        	android:layout_height="wrap_content"
+	        	android:gravity="center_vertical"
+	        	android:paddingLeft="5dp"
+	        	android:text="@string/UA_age_prompt"/>     
+	        <EditText
+        		android:id="@+id/age_entry"
+       		 	android:layout_width="95dp"
+        		android:layout_height="wrap_content"
+        		android:gravity="center_horizontal" />
+	    </LinearLayout>
+	    
+		<LinearLayout
+		    android:layout_width="216dp"
+		    android:layout_height="wrap_content"
+		    android:orientation="vertical" >
+
+	    	<TextView
+	        	android:id="@+id/ug_label"
+	        	android:layout_width="fill_parent"
+	        	android:layout_height="wrap_content"
+	        	android:gravity="center_vertical"
+	        	android:paddingLeft="5dp"
+	        	android:paddingTop="3dp"
+	        	android:text="@string/UA_gender_prompt"/>    
+	    
+		    <RadioGroup
+		    	android:id="@+id/radioGender"
+		    	android:layout_width="fill_parent"
+		    	android:layout_height="wrap_content"
+		    	android:gravity="center"
+		    	android:orientation="horizontal">
+
+			    <RadioButton
+			        android:id="@+id/genderRadioMale"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:text="@string/UA_male" />
+				    
+				<RadioButton
+				    android:id="@+id/genderRadioFemale"
+				    android:layout_width="wrap_content"
+				    android:layout_height="wrap_content"
+				    android:layout_marginLeft="8dp"
+				    android:text="@string/UA_female" />
+			</RadioGroup>
+	    </LinearLayout>
+    </LinearLayout>
+    
+    
+	<TextView
+        	android:id="@+id/ue_label"
+        	android:layout_width="fill_parent"
+        	android:layout_height="wrap_content"
+        	android:gravity="center_vertical"
+        	android:layout_marginTop="5dp"
+        	android:paddingLeft="5dp"
+        	android:text="@string/UA_ethnicity_prompt"/> 
+        	
+	<RadioGroup
+    	android:id="@+id/radioEthnicity"
+    	android:layout_width="fill_parent"
+    	android:layout_height="wrap_content"
+    	 >
+
+	    <RadioButton
+	        android:id="@+id/ethRadioWhite"
+	        android:layout_width="wrap_content"
+	        android:height="50dp"
+	        android:text="@string/UA_white" />
+		    
+		<RadioButton
+		    android:id="@+id/ethRadioBlack"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="@string/UA_black" />
+		
+		<RadioButton
+		    android:id="@+id/ethRadioIndian"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="@string/UA_indian" />
+		
+		<RadioButton
+		    android:id="@+id/ethRadioPac"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="@string/UA_pac" />
+		
+		<RadioButton
+		    android:id="@+id/ethRadioAsian"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="@string/UA_asian" />
+		
+		<RadioButton
+		    android:id="@+id/ethRadioOther"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="@string/UA_other" />
+	</RadioGroup>
+	
+	<Button
+		android:id="@+id/submit"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:text="@string/submit" />
+</LinearLayout>
+</ScrollView>

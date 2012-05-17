@@ -1,6 +1,7 @@
 package com.cmuchimps.myauth;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,8 +20,12 @@ import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -28,7 +33,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.cmuchimps.myauth.DataWrapper.Fact;
 import com.cmuchimps.myauth.KnowledgeTranslatorWrapper.KnowledgeSubscription;
 import com.cmuchimps.myauth.QuestionGenerator.QuestionAnswerPair;
 
@@ -45,6 +49,11 @@ public class MyAuthActivity extends Activity {
 	private QuestionAnswerPair currQ;
 	
 	private LocationManager lm;
+	private LocationListener ll;
+	private ConnectivityManager cm;
+	
+	private User mUser;
+	private ServerCommunicator mCommunicator;
 	
 	//fields
 	TextView output;
@@ -58,12 +67,13 @@ public class MyAuthActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-
+        
         output = (TextView)this.findViewById(R.id.output);
         submit = (Button)this.findViewById(R.id.submit);
         newq = (Button)this.findViewById(R.id.newq);
         pollAll = (Button)this.findViewById(R.id.pollAll);
         printFacts = (Button)this.findViewById(R.id.printFacts);
+        mCommunicator = new ServerCommunicator(this.getApplicationContext());
         
         final EditText input = (EditText)this.findViewById(R.id.input);
 
@@ -84,7 +94,6 @@ public class MyAuthActivity extends Activity {
         });
         
         newq.setOnClickListener(new OnClickListener() {
-
 			@Override
 			public void onClick(View arg0) {
 				input.setText("");
@@ -122,6 +131,9 @@ public class MyAuthActivity extends Activity {
         this.lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
         this.ktw = new KnowledgeTranslatorWrapper();
         this.setUpdaterAlarm();
+        this.initializeLocationListener();
+        cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+        //this.deleteUser();
         /*System.out.println("Testing QAT-Fact");
         ArrayList<Fact> testFacts = new ArrayList<Fact>();
         testFacts.add(mDbHelper.getFact(64l));
@@ -129,17 +141,71 @@ public class MyAuthActivity extends Activity {
         this.qg.testQATagainstFacts(mDbHelper.getQAT(6l), testFacts);
         System.out.println("Ending QAT-Fact test");*/
         //this.forcePollSubscriptions();
-        UtilityFuncs.TestingFLEXJson();
+        //UtilityFuncs.TestingFLEXJson(this.getFilesDir());
     }
     
     @Override
     public void onResume() {
     	super.onResume();
+    	if (mUser == null && !User.exists(getFilesDir())) {
+    		startActivity(new Intent(this, NewUserActivity.class));
+    	} else {
+    		try {
+				mUser = User.load(getFilesDir());
+				System.out.println("User:");
+				System.out.println(mUser);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	}
     	this.setUpdaterAlarm();
+    	if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
+		} else if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
+		}
+    }
+    
+    @Override
+    public void onStart() {
+    	super.onStart();
+    	if (mUser == null && !User.exists(getFilesDir())) {
+    		startActivity(new Intent(this, NewUserActivity.class));
+    	} else {
+    		try {
+				mUser = User.load(getFilesDir());
+				System.out.println("User:");
+				System.out.println(mUser);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	}
+		if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
+		} else if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
+		}
+    }
+    
+    @Override
+    public void onPause() {
+    	lm.removeUpdates(ll);
+    	super.onPause();
+    }
+    
+    @Override
+    public void onStop() {
+    	lm.removeUpdates(ll);
+    	super.onStop();
+    }
+    
+    private void deleteUser() {
+    	File f = new File(getFilesDir(),User.USER_FILE);
+    	f.delete();
     }
     
     private void initializeLocationListener() {
-		LocationListener ll = new LocationListener() {
+		ll = new LocationListener() {
 
 			@Override
 			public void onLocationChanged(Location location) {
@@ -147,26 +213,42 @@ public class MyAuthActivity extends Activity {
 				//create fact about location here
 				//2 tags: person:User was at location:Towers=
 				//also get Timestamp and day of week
-				String timestamp, dayOfWeek;
-				ArrayList<HashMap<String,String>> tags = new ArrayList<HashMap<String,String>>(),metas = new ArrayList<HashMap<String,String>>();
-				Date date = new Date(location.getTime());
-				timestamp = (String) DateFormat.format("yyyy-MM-dd hh:mm:ss", date);
-				dayOfWeek = (String) DateFormat.format("EEEE", date);
-				//add person:User tag
-				HashMap<String,String> curr = new HashMap<String,String>();
-				curr.put("tag_class", "person");
-				curr.put("subclass", "User");
-				tags.add(curr);
-				//add location:GPS tag
-				curr = new HashMap<String,String>();
-				curr.put("tag_class", "location");
-				curr.put("subclass", "Network");
-				//lat,long,accuracy
-				curr.put("subvalue", location.getLatitude() + "," + location.getLongitude() + "," + location.getAccuracy());
-				tags.add(curr);
-				//TODO: Should we do reverse geocoding here? Who knows.
-				//no metas for now
-				mDbHelper.createFact(timestamp, dayOfWeek, tags, metas);
+				System.out.println("Location changed event has triggered for some reason.");
+				if (System.currentTimeMillis() > mDbHelper.getSubscriptionDueTimeFor("Location")) {
+					System.out.println("adding location fact from location listener");
+					String timestamp, dayOfWeek;
+					ArrayList<HashMap<String,String>> tags = new ArrayList<HashMap<String,String>>(),metas = new ArrayList<HashMap<String,String>>();
+					Date date = new Date(location.getTime());
+					timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", date);
+					dayOfWeek = (String) DateFormat.format("EEEE", date);
+					//add person:User tag
+					HashMap<String,String> curr = new HashMap<String,String>();
+					curr.put("tag_class", "Person");
+					curr.put("subclass", "User");
+					tags.add(curr);
+					//add location:GPS tag
+					curr = new HashMap<String,String>();
+					curr.put("tag_class", "Location");
+					curr.put("subclass", "Provider");
+					curr.put("subvalue", location.getProvider());
+					tags.add(curr);
+					//add location:Geopoint tag
+					curr = new HashMap<String,String>();
+					curr.put("tag_class", "Location");
+					curr.put("subclass", "Geopoint");
+					curr.put("subvalue", location.getLatitude() + "," + location.getLongitude());
+					tags.add(curr);
+					//add location:Accuracy tag
+					curr = new HashMap<String,String>();
+					curr.put("tag_class","Location");
+					curr.put("subclass", "Geopoint");
+					curr.put("subvalue", ""+location.getAccuracy());
+					tags.add(curr);
+					//TODO: Should we do reverse geocoding here? Who knows.
+					//no metas for now
+					mDbHelper.createFact(timestamp, dayOfWeek, tags, metas);
+					mDbHelper.updateSubscriptionTime("Location", location.getTime());
+				}
 			}
 
 			@Override
@@ -189,8 +271,6 @@ public class MyAuthActivity extends Activity {
 			}
 			
 		};
-		
-		lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
     }
     
     @Override
@@ -328,5 +408,46 @@ public class MyAuthActivity extends Activity {
 				}
 			}
 		}
+    }
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+        	case (R.id.sendPackets):
+        		Toast.makeText(getApplicationContext(), "Send Packets Selected", Toast.LENGTH_SHORT).show();
+        		return true;
+        	case (R.id.contact):
+        		Toast.makeText(getApplicationContext(), "Contact Info Selected", Toast.LENGTH_SHORT).show();
+        		return true;
+        	case (R.id.instructions):
+        		Toast.makeText(getApplicationContext(), "Instructions Selected", Toast.LENGTH_SHORT).show();
+        		return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+    
+    protected void onActivityResult(int requestCode, int resultCode,
+            Intent data) {
+        if (requestCode == Activity.RESULT_OK) {
+            if (resultCode == RESULT_OK) {
+            	//Send user packet to server if we have connectivity
+            	try {
+	            	if (User.exists(getFilesDir())) {
+	            		mCommunicator.queuePacket((mUser == null ? User.load(getFilesDir()) : mUser));
+	            	}
+            	} catch (Exception e) {
+            		e.printStackTrace();
+            	}
+            }
+        }
     }
 }

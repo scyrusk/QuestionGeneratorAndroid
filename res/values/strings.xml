@@ -1,7 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="hello">Hello World, MyAuthActivity!</string>
     <string name="app_name">MyAuth</string>
-
+    <string name="user_activity_name">NewUserActivity</string>
+    <string name="placeholder">Placeholder Text...</string>
+    
+    <string name="user_form_prompt">Thanks for participating in this study! First, please fill out the following form:</string>
+	<string name="UA_age_prompt">Age:</string>
+	<string name="UA_gender_prompt">Gender:</string>
+	<string name="UA_name_prompt">Name:</string>
+	<string name="UA_ethnicity_prompt">Ethnicity:</string>
+	<string name="UA_email_prompt">Email:</string>
+	<string name="UA_male">Male</string>
+	<string name="UA_female">Female</string>
+	<string name="UA_white">White</string>
+	<string name="UA_black">Black or African American</string>
+	<string name="UA_indian">American Indian or Alaskan Native</string>
+	<string name="UA_pac">Pacific Islander</string>
+	<string name="UA_asian">Asian</string>
+	<string name="UA_other">Other</string>
+	
+	<string name="presupp">Please answer the following questions on a scale of 1 (Strongly Disagree) to 5 (Strongly Agree)</string>
+	<string name="supp1_prompt">I am confident in my answer.</string>
+	<string name="supp2_prompt">It was easy for me to remember the answer to this question.</string>
+	<string name="supp3_prompt">No one else would know the answer to this question.</string>
+	
+	<string name="one">1</string>
+	<string name="two">2</string>
+	<string name="three">3</string>
+	<string name="four">4</string>
+	<string name="five">5</string>
+	
+	<string name="submit">Submit</string>
+	
+	<string name="main_menu_send">Send Data to Server</string>
+	<string name="main_menu_contact">Contact Info</string>
+	<string name="main_menu_instructions">Instructions</string>
 </resources>

@@ -48,6 +48,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".NewUserActivity"
+            android:label="@string/user_activity_name" >
+        </activity>
         <service
         android:name=".KnowledgeTranslatorWrapper"></service>
         <receiver

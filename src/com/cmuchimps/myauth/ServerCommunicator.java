@@ -26,37 +26,22 @@ public class ServerCommunicator {
 	private final String URL = "http://www.casa.cmuchimps.org/appserver";
 	private final String OK_RESP = "";
 	private final String NOT_OK_RESP = "";
+	private final String SEND_USER_RESP = "";
 	
-	private ArrayList<TransmissionPacket> mQueue;
+	private ArrayList<TransmittablePacket> mQueue;
 	private Context mContext;
+	private boolean mPopQueue;
 	
 	public ServerCommunicator(Context c) {
 		mContext = c;
+		mPopQueue = true;
 	}
 	
 	private void populateQueue() throws IOException {
-		mQueue = new JSONDeserializer<ArrayList<TransmissionPacket>>().deserialize(new FileReader(new File(mContext.getFilesDir(), QUEUE_FILE)), ArrayList.class );
+		mQueue = new JSONDeserializer<ArrayList<TransmittablePacket>>().deserialize(new FileReader(new File(mContext.getFilesDir(), QUEUE_FILE)), ArrayList.class );
 	}
 	
-	public boolean sendQueuedPackets() throws IOException {
-		boolean retVal = true;
-		populateQueue();
-		ArrayList<TransmissionPacket> toDestroy = new ArrayList<TransmissionPacket>();
-		//try and submit all packets queued up
-		for (TransmissionPacket toSend : mQueue) {
-			String resp = sendPacket(toSend);
-			if (resp.equalsIgnoreCase("OK")) {
-				toDestroy.add(toSend);
-			} else {
-				retVal = false;
-			}
-		}
-		
-		//destroy successfully transmitted packets
-		for (TransmissionPacket dest : toDestroy) {
-			mQueue.remove(dest);
-		}
-		
+	private void serializeQueue() throws IOException {
 		//Update mQueue file
 		File f = mContext.getFilesDir();
 		Writer writer = new BufferedWriter(new FileWriter(new File(f, QUEUE_FILE)));
@@ -66,11 +51,53 @@ public class ServerCommunicator {
 		} finally {
 			writer.close();
 		}
+	}
+	
+	public void queuePacket(TransmittablePacket toQueue) throws IOException {
+		if (mPopQueue) {
+			populateQueue();
+			mPopQueue = false;
+		}
+		mQueue.add(toQueue);
+		serializeQueue();
+	}
+	
+	public String sendUserPacket() throws IOException {
+		User user = User.load(mContext.getFilesDir());
+		if (user != null) {
+			return sendPacket(user);
+		}
+		return "COULD NOT SEND USER";
+	}
+	
+	public boolean sendQueuedPackets() throws IOException {
+		boolean retVal = true;
+		if (mPopQueue) {
+			populateQueue();
+			mPopQueue = false;
+		}
+		ArrayList<TransmittablePacket> toDestroy = new ArrayList<TransmittablePacket>();
+		//try and submit all packets queued up
+		for (TransmittablePacket toSend : mQueue) {
+			String resp = sendPacket(toSend);
+			if (resp.equalsIgnoreCase("OK")) {
+				toDestroy.add(toSend);
+			} else {
+				retVal = false;
+			}
+		}
+		
+		//destroy successfully transmitted packets
+		for (TransmittablePacket dest : toDestroy) {
+			mQueue.remove(dest);
+		}
+		
+		serializeQueue();
 		
 		return retVal; //false means not all were successfully transmitted
 	}
 	
-	public String sendPacket(TransmissionPacket toSend) {
+	private String sendPacket(TransmittablePacket toSend) {
 		HttpClient client = new DefaultHttpClient(toSend.convertToParams());
 		//Instantiate a POST HTTP method
 		try {
@@ -78,8 +105,11 @@ public class ServerCommunicator {
 		    String resp = UtilityFuncs.convertStreamToString(new BufferedReader(new InputStreamReader(response.getEntity().getContent())));
 		    if (resp.equalsIgnoreCase(OK_RESP)) { //data secured on server
 		    	return "OK";
-		    } else { //data not secured on server
-		    	//two options: store on SD card, or store in database and retry sending later
+		    } else if (resp.equalsIgnoreCase(SEND_USER_RESP)) {
+		    	return sendUserPacket();
+			}
+		    else { //data not secured on server
+		    	if (!mQueue.contains(toSend)) mQueue.add(toSend);
 		    	return "NOT OK";
 		    }
 		} catch (ClientProtocolException e) {
@@ -91,7 +121,7 @@ public class ServerCommunicator {
 		return "NOT OK";
 	}
 	
-	public String sendPacket(String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
+	private String sendPacket(String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
 		return sendPacket(new TransmissionPacket(qt,qs,as,ua,supp,ts));
 	}
 	

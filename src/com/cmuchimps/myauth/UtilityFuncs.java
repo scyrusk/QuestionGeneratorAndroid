@@ -1,7 +1,16 @@
 package com.cmuchimps.myauth;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -120,7 +129,7 @@ public class UtilityFuncs {
 		return sb.toString();
 	}
 	
-	public static void TestingFLEXJson() {
+	public static void TestingFLEXJson(File filesDir) {
 		try {
 			HashMap<String,String> qs = new HashMap<String,String>();
 			qs.put("timeInQ", "11am");
@@ -140,18 +149,40 @@ public class UtilityFuncs {
 			supp.put("How easy was it for you to recall the answer to this question?", "5");
 			supp.put("How confident are you in your answer?", "5");
 			TransmissionPacket temp = new TransmissionPacket("Who what when where how at 11am?",qs,answers,"abc",supp,"now");
-			ArrayList<TransmissionPacket> hi = new ArrayList<TransmissionPacket>();
-			//hi.add(temp);
+			User us = new User(filesDir,"Ced","ced@ceds.com",23,"Black","Male");
+			ArrayList<TransmittablePacket> hi = new ArrayList<TransmittablePacket>();
+			hi.add(temp);
+			hi.add(us);
 			System.out.println("Before:");
 			System.out.println(temp);
-		    String s = new JSONSerializer().deepSerialize(hi,new StringBuffer());
-		    System.out.println("Serialized = " + s);
-		    ArrayList<TransmissionPacket> response = new JSONDeserializer<ArrayList<TransmissionPacket>>().deserialize(s, ArrayList.class );
+			Writer writer = new BufferedWriter(new FileWriter(new File(filesDir,"temp.json")));
+		    new JSONSerializer().deepSerialize(hi,writer);
+		    writer.flush();
+		    writer.close();
+		    Reader reader = new BufferedReader(new FileReader(new File(filesDir,"temp.json")));
+		    //System.out.println("Serialized = " + s);
+		    ArrayList<TransmittablePacket> response = new JSONDeserializer<ArrayList<TransmittablePacket>>().deserialize(reader, ArrayList.class );
 		    System.out.println(response.size() + " transmission packets!");
-		    for (TransmissionPacket tp : response)
+		    for (TransmittablePacket tp : response)
 		    	System.out.println(tp);
 		 } catch (Exception e) {
 			 e.printStackTrace();
 		 }
+	}
+	
+	public static String getHash(String initial) {
+		MessageDigest digest=null;
+		try {
+		    digest = MessageDigest.getInstance("SHA-256");
+		} catch (NoSuchAlgorithmException e1) {
+		    // TODO Auto-generated catch block
+		    e1.printStackTrace();
+		}
+		digest.reset();
+		return bin2hex(digest.digest(initial.getBytes()));
+	}
+	
+	public static String bin2hex(byte[] data) {
+		return String.format("%0" + (data.length * 2) + 'x', new BigInteger(1, data));
 	}
 }

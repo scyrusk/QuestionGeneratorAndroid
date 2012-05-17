@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <TextView
+        android:id="@+id/question_prompt"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingLeft="5dp"
+        android:text="@string/placeholder" />
+
+    <EditText
+        android:id="@+id/user_answer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:gravity="left|center_vertical" >
+
+        <requestFocus />
+    </EditText>
+    
+    <TextView
+        android:id="@+id/q_instructions"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="5dp"
+        android:paddingLeft="5dp"
+        android:text="@string/presupp" 
+        android:textColor="#ff0000"/>
+	
+    <TextView
+        android:id="@+id/supp1_label"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:paddingLeft="5dp"
+        android:text="@string/supp1_prompt" 
+        android:textStyle="bold" />
+    
+    <RadioGroup
+	   	android:id="@+id/radioSupp1"
+	   	android:layout_width="fill_parent"
+	   	android:layout_height="wrap_content"
+	   	android:paddingTop="3dp" 
+	   	android:paddingLeft="10dp"
+	   	android:orientation="horizontal">
+	
+	    <RadioButton
+	        android:id="@+id/supp1Radio1"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/one" />
+		    
+		<RadioButton
+		    android:id="@+id/supp1Radio2"
+		    android:layout_width="60dp"
+		    android:layout_height="wrap_content"
+		    android:text="@string/two" />
+		
+		<RadioButton
+	        android:id="@+id/supp1Radio3"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/three" />
+		
+		<RadioButton
+	        android:id="@+id/supp1Radio4"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/four" />
+		
+		<RadioButton
+	        android:id="@+id/supp1Radio5"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/five" />
+		
+	</RadioGroup>
+	
+    <TextView
+        android:id="@+id/supp2_label"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:paddingLeft="5dp"
+        android:text="@string/supp2_prompt" 
+        android:textStyle="bold" />
+    
+    <RadioGroup
+	   	android:id="@+id/radioSupp2"
+	   	android:layout_width="fill_parent"
+	   	android:layout_height="wrap_content"
+	   	android:paddingTop="3dp" 
+	   	android:paddingLeft="10dp"
+	   	android:orientation="horizontal">
+	
+	    <RadioButton
+	        android:id="@+id/supp2Radio1"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/one" />
+		    
+		<RadioButton
+		    android:id="@+id/supp2Radio2"
+		    android:layout_width="60dp"
+		    android:layout_height="wrap_content"
+		    android:text="@string/two" />
+		
+		<RadioButton
+	        android:id="@+id/supp2Radio3"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/three" />
+		
+		<RadioButton
+	        android:id="@+id/supp2Radio4"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/four" />
+		
+		<RadioButton
+	        android:id="@+id/supp2Radio5"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/five" />
+		
+	</RadioGroup>
+	
+    <TextView
+        android:id="@+id/supp3_label"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:paddingLeft="5dp"
+        android:text="@string/supp3_prompt" 
+        android:textStyle="bold" />
+    
+    <RadioGroup
+	   	android:id="@+id/radioSupp3"
+	   	android:layout_width="fill_parent"
+	   	android:layout_height="wrap_content"
+	   	android:paddingTop="3dp" 
+	   	android:paddingLeft="10dp"
+	   	android:orientation="horizontal">
+	
+	    <RadioButton
+	        android:id="@+id/supp3Radio1"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/one" />
+		    
+		<RadioButton
+		    android:id="@+id/supp3Radio2"
+		    android:layout_width="60dp"
+		    android:layout_height="wrap_content"
+		    android:text="@string/two" />
+		
+		<RadioButton
+	        android:id="@+id/supp3Radio3"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/three" />
+		
+		<RadioButton
+	        android:id="@+id/supp3Radio4"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/four" />
+		
+		<RadioButton
+	        android:id="@+id/supp3Radio5"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="@string/five" />
+	</RadioGroup>
+	
+    <Button
+   	    android:id="@+id/submit"
+   	    android:layout_width="fill_parent"
+   	    android:layout_height="wrap_content"
+   	    android:layout_marginTop="15dp"
+   	    android:text="@string/submit" />
+</LinearLayout>
