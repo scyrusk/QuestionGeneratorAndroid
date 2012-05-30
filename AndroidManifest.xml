@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.BATTERY_STATS"/>
     <uses-permission android:name="android.permission.DUMP"/>
     <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
@@ -52,11 +53,20 @@
             android:name=".NewUserActivity"
             android:label="@string/user_activity_name" >
         </activity>
+        <activity
+            android:name=".ConsentFormActivity"
+            android:label="@string/consent_activity_name" >
+        </activity>
         <service
-        android:name=".KnowledgeTranslatorWrapper"></service>
+        	android:name=".KnowledgeTranslatorWrapper"></service>
+        <service
+        	android:name=".UploaderService"></service>
         <receiver
     		android:name=".SubscriptionReceiver"
     		android:enabled="true"></receiver>
+        <receiver
+            android:name=".UploaderReceiver"
+            android:enabled="true"></receiver>
     	<receiver android:name=".BootReceiver">
         <intent-filter>
             <action android:name="android.intent.action.BOOT_COMPLETED" />

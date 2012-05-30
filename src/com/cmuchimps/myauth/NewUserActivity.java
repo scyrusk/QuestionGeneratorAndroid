@@ -88,8 +88,8 @@ public class NewUserActivity extends Activity {
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-					Toast.makeText(getApplicationContext(), getApplicationContext().getFilesDir().getPath(), Toast.LENGTH_LONG).show();
-					//Toast.makeText(getApplicationContext(), "Sorry, it seems that your device doesn't enable file storage. Please contact sauvik@cmu.edu for assistance if you wish to continue.", Toast.LENGTH_LONG).show();
+					//Toast.makeText(getApplicationContext(), getApplicationContext().getFilesDir().getPath(), Toast.LENGTH_LONG).show();
+					Toast.makeText(getApplicationContext(), "Sorry, it seems that your device doesn't enable file storage. Please contact sauvik@cmu.edu for assistance if you wish to continue.", Toast.LENGTH_LONG).show();
 					return;
 				}
 				

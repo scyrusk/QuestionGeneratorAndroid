@@ -7,7 +7,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 
@@ -74,6 +77,18 @@ public class User extends TransmittablePacket {
 		retVal.setParameter("gender", gender);
 		retVal.setParameter("unique_id", unique_id);
 		retVal.setParameter("age", age);
+		return retVal;
+	}
+	
+	public List<NameValuePair> convertToNVP() {
+		List<NameValuePair> retVal = new ArrayList<NameValuePair>();
+		retVal.add(new BasicNameValuePair("type", "" + typeid));
+		retVal.add(new BasicNameValuePair("name", name));
+		retVal.add(new BasicNameValuePair("email", email));
+		retVal.add(new BasicNameValuePair("ethnicity", ethnicity));
+		retVal.add(new BasicNameValuePair("gender", gender));
+		retVal.add(new BasicNameValuePair("unique_id", unique_id));
+		retVal.add(new BasicNameValuePair("age", ""+age));
 		return retVal;
 	}
 	

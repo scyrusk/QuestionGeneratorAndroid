@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" >
+
+    <ScrollView
+        android:id="@+id/scrollView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.99" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" 
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/textView1"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Consent Form\n\n
+This study is part of a research study conducted by Sauvik Das at Carnegie Mellon University.
+\n\n
+The purpose of this research is to gauge the memorability of people's everyday interactions with their mobile phones.
+\n\n
+Procedures\n
+You will download an Android application that will monitor your interactions with the technology (e.g. keep track of your SMS messages, Phone Calls, Browser visits) and periodically ask you to answer a set of questions about these interactions. You will be allowed to answer as many of these questions as you want to everyday, but you will be required to answer 5 questions per day.
+\n\n
+Participation Requirements\n
+Participation in this study is limited to individuals aged 18 and older, and to those who own an Android smartphone device with an operating system version of at least 2.3.6.
+\n\n
+Risks\n
+The risks and discomfort associated with participation in this study are no greater than those ordinarily encountered in daily life or during other online activities. There is a small risk that your responses could be leaked to external sources. There is also a small risk that the questions might prompt you to remember unpleasant memories.
+\n\n
+Benefits\n
+There may be no personal benefit from your participation in the study but the knowledge received may be of value to humanity. Further, through the course of this study, you might improve your own memory of your interactions with technology.
+\n\n
+Compensation and Costs\n
+In total, you will be paid $2.00 for each day you complete at least 5 questions, and an additional $0.20 per question you answer on top of the 5 questions up to a total of $3.00 per day.
+\n
+There will be no cost to you if you participate in this study.
+\n\n
+Confidentiality\n
+Your data and consent form will be kept separate. Your consent form will be stored in an secure server stored on Carnegie Mellon University property. By participating, you understand and agree that the data and information gathered during this study may be used by Carnegie Mellon and published and/or disclosed by Carnegie Mellon to others outside of Carnegie Mellon. However, your name, address, contact information and other direct personal identifiers in your consent form will not be mentioned in any such publication or dissemination of the research data and/or results by Carnegie Mellon.
+\n\n
+Note that your data will be kept on your phone, and not sent to an external server except in the case where you answer a question about a certain interaction with your smartphone. When you answer a question, the question along with your entered answer will be sent to a secure Carnegie Mellon server.
+\n\n
+Right To Ask Questions and Contact Information\n
+If you have any questions about this study, you should feel free to ask them by contacting the Principal Investigator now at Sauvik Das, PhD Student, Human-Computer Interaction Institute, NSH 4609, 5000 Forbes Avenue, Pittsburgh, PA, 15213, 678-978-1547, sauvik@cmu.edu. If you have questions later, desire additional information, or wish to withdraw your participation please contact the Principle Investigator by mail, phone or e-mail in accordance with the contact information listed above.
+\n\n
+If you have questions pertaining to your rights as a research participant; or to report objections to this study, you should contact the Research Regulatory Compliance Office at Carnegie Mellon University. Email: irb-review@andrew.cmu.edu . Phone: 412-268-1901 or 412-268-5460.
+\n\n
+The Carnegie Mellon University Institutional Review Board (IRB) has approved the use of human participants for this study.
+\n\n
+Voluntary Participation\n
+Your participation in this research is voluntary. You may discontinue participation at any time during the research activity.
+\n\n
+If you agree to the terms in this document, additional instructions to begin the study may be found at http://www.casa.cmuchimps.org/instructions.
+\n\n
+An online version of this document can be found at http://www.casa.cmuchimps.org/consent" />
+            			
+            <CheckBox
+                android:id="@+id/understood"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="I have read and understand the information above." />
+            
+            <CheckBox
+                android:id="@+id/participate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="I want to participate in this research and continue with the study." />
+        </LinearLayout>
+
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <Button
+            android:id="@+id/reject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:text="Reject" />
+
+        <Button
+            android:id="@+id/accept"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:enabled="false"
+            android:text="I Accept" />
+    </LinearLayout>
+
+</LinearLayout>

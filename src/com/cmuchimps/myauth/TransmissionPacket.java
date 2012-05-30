@@ -3,29 +3,36 @@ package com.cmuchimps.myauth;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 
 public class TransmissionPacket extends TransmittablePacket {
-	public String user_id;
-	public String qtext;
-	public HashMap<String,String> question;
-	public ArrayList<HashMap<String,String>> answers;
-	public String user_answer;
-	public HashMap<String,String> supplementary_responses;
-	public String timestamp;
+	public int response_id;
+	public String user_id; //the unique_id of the user
+	public String qtext; //the verbatim question text
+	public HashMap<String,String> question; //meta-values about the question such as the time and qatid
+	public ArrayList<HashMap<String,String>> answers; //answer values, with timestamp. additionally, the correct answer will have the exactly correct field
+	public String user_answer; //the user's answer
+	public HashMap<String,String> supplementary_responses; //the answers to the supplementary questions
+	public String timestamp; //the time the user answered the question
 	
 	public TransmissionPacket() {
-		initialize("", new HashMap<String,String>(), new ArrayList<HashMap<String,String>>(), "", new HashMap<String,String>(), "");
+		initialize(-1,"","", new HashMap<String,String>(), new ArrayList<HashMap<String,String>>(), "", new HashMap<String,String>(), "");
 	}
 	
-	public TransmissionPacket(String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
-		initialize(qt,qs,as,ua,supp,ts);
+	public TransmissionPacket(int rid,String uid,String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
+		initialize(rid,uid,qt,qs,as,ua,supp,ts);
 	}
 	
-	private void initialize(String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
+	private void initialize(int rid,String uid,String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
+		response_id = rid;
 		typeid = 1;
+		user_id = uid;
 		qtext = new String(qt);
 		question = UtilityFuncs.duplicateMap(qs);
 		answers = new ArrayList<HashMap<String,String>>();
@@ -50,6 +57,7 @@ public class TransmissionPacket extends TransmittablePacket {
 	
 	public HttpParams convertToParams() {
 		HttpParams retVal = new BasicHttpParams();
+		retVal.setParameter("rid", response_id);
 		retVal.setParameter("type", typeid);
 		retVal.setParameter("qtext", qtext);
 		retVal.setParameter("user_answer", user_answer);
@@ -72,9 +80,38 @@ public class TransmissionPacket extends TransmittablePacket {
 		return retVal;
 	}
 	
+	public List<NameValuePair> convertToNVP() {
+		List<NameValuePair> retVal = new ArrayList<NameValuePair>();
+		retVal.add(new BasicNameValuePair("rid",""+response_id));
+        retVal.add(new BasicNameValuePair("type", ""+typeid));
+        retVal.add(new BasicNameValuePair("qtext", qtext));
+        retVal.add(new BasicNameValuePair("user_answer", user_answer));
+        retVal.add(new BasicNameValuePair("timestamp", timestamp));
+        for (String qkey : question.keySet()) {
+			retVal.add(new BasicNameValuePair("question_" + qkey, question.get(qkey)));
+		}
+		int i = 0;
+		retVal.add(new BasicNameValuePair("num_answers",""+answers.size()));
+		for (HashMap<String,String> answer : answers) {
+			for (String akey : answer.keySet()) {
+				retVal.add(new BasicNameValuePair("answer" + i + "_" + akey, answer.get(akey)));
+			}
+			i++;
+		}
+		String[] supp_keys = supplementary_responses.keySet().toArray(new String[supplementary_responses.size()]);
+		Arrays.sort(supp_keys);
+		for (i = 0; i < supp_keys.length; i++) {
+			retVal.add(new BasicNameValuePair("supp"+i, supplementary_responses.get(supp_keys[i])));
+		}
+        //httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+        return retVal;
+	}
+	
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("{\n");
+		sb.append("\tResponseID: " + response_id + "\n");
+		sb.append("\tUserID: " + user_id + "\n");
 		sb.append("\tQtext: " + qtext + "\n");
 		sb.append("\tQuestion_Meta:\n\t{\n");
 		for (String qkey : question.keySet()) {

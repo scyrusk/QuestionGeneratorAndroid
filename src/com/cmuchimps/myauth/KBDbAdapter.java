@@ -175,6 +175,11 @@ public class KBDbAdapter {
     	return -1;
     }
     
+    public long returnTagNumbers(String name) {
+    	Cursor c = mDb.query(TAG_CLASS_TABLE, new String[] {KEY_ROWID, "name"}, "name='"+name+"'", null, null, null, null);
+    	return c.getCount();
+    }
+    
     /**
      * 
      * @param rowId
@@ -363,8 +368,16 @@ public class KBDbAdapter {
      * 
      * @return
      */
-    public Cursor fetchAllQATS() {
-    	return null;
+    public Cursor fetchAllQATs() {
+    	return mDb.query(QAT_TABLE, new String[] {KEY_ROWID,"qtext"}, null, null, null, null, null);
+    }
+    
+    /**
+     * 
+     * @return
+     */
+    public int getNumQATS() {
+    	return fetchAllQATs().getCount();
     }
     
     /**
@@ -486,6 +499,10 @@ public class KBDbAdapter {
     		c.moveToNext();
     	}
     	return subs;
+    }
+    
+    public int getNumSubscriptions() {
+    	return mDb.query(SUBSCRIPTIONS_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null).getCount();
     }
     
     public String getSubscriptionClassFor(String subskey) {
