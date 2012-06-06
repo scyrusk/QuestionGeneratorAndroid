@@ -53,6 +53,7 @@ public class MyAuthActivity extends Activity {
 	private int pollAllMenuId;
 	
 	public static final Random r = new Random();
+	private QuestionAnswerPair prevQ;
 	private QuestionAnswerPair currQ;
 	
 	private LocationManager lm;
@@ -75,9 +76,15 @@ public class MyAuthActivity extends Activity {
 	private int mSuppResponse1;
 	private int mSuppResponse2;
 	private int mSuppResponse3;
+	//state fields for skipping
+	private boolean[] mChoice;
+	
+	private final int NUM_SKIP_CHOICES = 4;
 	
 	private final int DIALOG_CONTACT = 0;
 	private final int DIALOG_INST = 1;
+	private final int DIALOG_SUB_ERROR = 2;
+	private final int DIALOG_SKIP_PICKER = 3;
 	
 	private final int CONSENT_RESULT = 0;
 	private final int NEW_USER_RESULT = 1;
@@ -113,26 +120,12 @@ public class MyAuthActivity extends Activity {
 
 			@Override
 			public void onClick(View v) {
-				if (currQ == null) {
+				if (currQ != null) {
+					prevQ = currQ;
 					resetFields();
 					askQuestion();
-				} else {
-					String user_id = getUser().unique_id;
-					String qtext = currQ.getQuestion();
-					HashMap<String,String> question = currQ.getQuestionMetas();
-					ArrayList<HashMap<String,String>> answer_metas = currQ.getAnswerMetas();
-					String user_answer = "skip";
-					HashMap<String,String> supplementary_responses = new HashMap<String,String>();
-					supplementary_responses.put("supp1","0");
-					supplementary_responses.put("supp2","0");
-					supplementary_responses.put("supp3","0");
-					String timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", System.currentTimeMillis());
-					try {
-						mCommunicator.queuePacket(new TransmissionPacket(ServerCommunicator.getNextPacketID(getFilesDir()),user_id,qtext,question,answer_metas,user_answer,supplementary_responses,timestamp));
-					} catch (IOException e) {
-						e.printStackTrace();
-						Toast.makeText(getApplicationContext(), "An error occured. The packet could not be saved...", Toast.LENGTH_SHORT).show();
-					}
+					showDialog(DIALOG_SKIP_PICKER);
+				} else { //because ordering matters above
 					resetFields();
 					askQuestion();
 				}
@@ -140,7 +133,6 @@ public class MyAuthActivity extends Activity {
         });
         
         submit.setOnClickListener(new OnClickListener() {
-
 			@Override
 			public void onClick(View v) {
 				if (input.getText().toString().length() > 0 && radioSupp1.getCheckedRadioButtonId() >= 0 && radioSupp2.getCheckedRadioButtonId() >= 0 && radioSupp3.getCheckedRadioButtonId() >= 0) {
@@ -149,10 +141,7 @@ public class MyAuthActivity extends Activity {
 					 * Create TransmissionPacket with the answer;
 					 * Ask new question and reset fields
 					 */
-					if (currQ == null) {
-						resetFields();
-						askQuestion();
-					} else {
+					if (currQ != null) {
 						String user_id = getUser().unique_id;
 						String qtext = currQ.getQuestion();
 						HashMap<String,String> question = currQ.getQuestionMetas();
@@ -168,12 +157,12 @@ public class MyAuthActivity extends Activity {
 						} catch (IOException e) {
 							e.printStackTrace();
 							Toast.makeText(getApplicationContext(), "An error occured. The packet could not be saved...", Toast.LENGTH_SHORT).show();
-						}
-						resetFields();
-						askQuestion();
+						}	
 					}
+					resetFields();
+					askQuestion();
 				} else {
-					Toast.makeText(getApplicationContext(), "Please enter a response to all fields.", Toast.LENGTH_SHORT);
+					showDialog(DIALOG_SUB_ERROR);
 				}
 			}
         });
@@ -214,7 +203,11 @@ public class MyAuthActivity extends Activity {
         this.qg = new QuestionGenerator(mDbHelper,dw,getFilesDir());
         this.lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
         this.ktw = new KnowledgeTranslatorWrapper();
-        
+        this.mChoice = new boolean[NUM_SKIP_CHOICES];
+    	for (int i = 0; i < mChoice.length; i++) {
+    		this.mChoice[i] = false;
+    	}
+    	
         /* Initialize managers and sensor listeners */
         this.initializeLocationListener();
         cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -241,7 +234,6 @@ public class MyAuthActivity extends Activity {
     		this.repopulateDB();
     		this.forcePollSubscriptions();
     	}
-    	
     	/* Control flow: consent form if not accepted => New User Activity if no user => Main Q/A activity */
     	if (!(new File(getFilesDir(),ConsentFormActivity.CONSENT_FILE)).exists()) {
     		if (!mConsentRequested) {
@@ -627,9 +619,9 @@ public class MyAuthActivity extends Activity {
     
     @Override
     protected Dialog onCreateDialog(int dialogId) {
+    	AlertDialog.Builder builder = new AlertDialog.Builder(this);
     	switch (dialogId) {
     	case DIALOG_CONTACT:
-    		AlertDialog.Builder builder = new AlertDialog.Builder(this);
     		builder.setMessage("You may reach me through phone or email\nPhone:678-978-1547\nEmail:sauvik@cmu.edu")
     			   .setNeutralButton("OK", new DialogInterface.OnClickListener() {
 					@Override
@@ -639,17 +631,55 @@ public class MyAuthActivity extends Activity {
 				}).setCancelable(true);
     		return builder.create();
     	case DIALOG_INST:
-    		AlertDialog.Builder builder_inst = new AlertDialog.Builder(this);
-    		builder_inst.setMessage(INSTRUCTIONS)
+    		builder.setMessage(INSTRUCTIONS)
     			   .setNeutralButton("OK", new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						dialog.dismiss();
 					}
 				}).setCancelable(true);
-    		return builder_inst.create();
+    		return builder.create();
+    	case DIALOG_SUB_ERROR:
+    		builder.setMessage("Please answer all fields before hitting submit.")
+			    .setNeutralButton("OK", new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						dialog.dismiss();
+					}
+				}).setCancelable(true);
+    		return builder.create();
+    	case DIALOG_SKIP_PICKER:
+    		CharSequence[] items = { "Not comfortable answering", "Totally can't remember", "Don't understand", "Other" };
+    		builder.setTitle("Pick a reason for skipping:")
+    			.setMultiChoiceItems(items, new boolean[] { false, false, false, false }, new DialogInterface.OnMultiChoiceClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+						mChoice[which] = isChecked;
+					}
+				})
+				.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						String qtext = prevQ.getQuestion();
+						HashMap<String,String> question = prevQ.getQuestionMetas();
+						String user_id = getUser().unique_id;
+						String timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", System.currentTimeMillis());
+						try {
+							TransmittablePacket tp = new SkipQuestionPacket(qtext, question, mChoice[0],mChoice[1],mChoice[2],mChoice[3],"",timestamp,user_id);
+							mCommunicator.queuePacket(tp);
+							System.out.println(tp);
+						} catch (IOException e) {
+							e.printStackTrace();
+							Toast.makeText(getApplicationContext(), "An error occured. The packet could not be saved...", Toast.LENGTH_SHORT).show();
+						}
+						dialog.dismiss();
+					}
+				})
+				.setCancelable(false);
+    		return builder.create();
     	default:
     		return null;
     	}
     }
+    
 }
