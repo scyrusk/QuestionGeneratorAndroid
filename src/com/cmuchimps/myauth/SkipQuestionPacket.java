@@ -10,6 +10,7 @@ import org.apache.http.params.HttpParams;
 
 public class SkipQuestionPacket extends TransmittablePacket {
 	public static final int typeid = 2;
+	public int response_id;
 	public boolean choice_uncomfortable;
 	public boolean choice_cant_remember;
 	public boolean choice_dont_understand;
@@ -21,14 +22,15 @@ public class SkipQuestionPacket extends TransmittablePacket {
 	public String user_id;
 	
 	public SkipQuestionPacket() {
-		initialize("", new HashMap<String,String>(), false, false, false, false, "", "", "");
+		initialize(-1,"", new HashMap<String,String>(), false, false, false, false, "", "", "");
 	}
 	
-	public SkipQuestionPacket(String qt, HashMap<String,String> qms, boolean c1, boolean c2, boolean c3, boolean c4, String e, String ts, String uid) {
-		initialize(qt, qms, c1,c2,c3,c4,e,ts,uid);
+	public SkipQuestionPacket(int rid,String qt, HashMap<String,String> qms, boolean c1, boolean c2, boolean c3, boolean c4, String e, String ts, String uid) {
+		initialize(rid, qt, qms, c1, c2, c3, c4, e, ts, uid);
 	}
 	
-	private void initialize(String qt, HashMap<String,String> qms, boolean c1, boolean c2, boolean c3, boolean c4, String e, String ts, String uid) {
+	private void initialize(int rid, String qt, HashMap<String,String> qms, boolean c1, boolean c2, boolean c3, boolean c4, String e, String ts, String uid) {
+		response_id = rid;
 		qtext = qt;
 		question = UtilityFuncs.duplicateMap(qms);
 		choice_uncomfortable = c1;
@@ -49,6 +51,8 @@ public class SkipQuestionPacket extends TransmittablePacket {
 	@Override
 	public List<NameValuePair> convertToNVP() {
 		List<NameValuePair> retVal = new ArrayList<NameValuePair>();
+		retVal.add(new BasicNameValuePair("rid", "" + response_id));
+		retVal.add(new BasicNameValuePair("user_id", user_id));
 		retVal.add(new BasicNameValuePair("type", "" + typeid));
 		retVal.add(new BasicNameValuePair("choice_uncomfortable", "" + this.choice_uncomfortable));
 		retVal.add(new BasicNameValuePair("choice_cant_remember", "" + this.choice_cant_remember));
@@ -66,6 +70,7 @@ public class SkipQuestionPacket extends TransmittablePacket {
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("{\n");
+		sb.append("\tResponseID: " + response_id + "\n");
 		sb.append("\tType: " + typeid + "\n");
 		sb.append("\tUserID: " + user_id + "\n");
 		sb.append("\tQtext: " + qtext + "\n");

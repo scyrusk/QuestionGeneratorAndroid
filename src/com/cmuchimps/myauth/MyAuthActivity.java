@@ -27,6 +27,7 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -50,7 +51,6 @@ public class MyAuthActivity extends Activity {
 	private DataWrapper dw;
 	private QuestionGenerator qg;
 	private KnowledgeTranslatorWrapper ktw;
-	private int pollAllMenuId;
 	
 	public static final Random r = new Random();
 	private QuestionAnswerPair prevQ;
@@ -65,6 +65,7 @@ public class MyAuthActivity extends Activity {
 	
 	//form fields
 	TextView question_prompt;
+	TextView send_to_server_message;
 	EditText input;
 	Button submit;
 	Button skip;
@@ -78,6 +79,7 @@ public class MyAuthActivity extends Activity {
 	private int mSuppResponse3;
 	//state fields for skipping
 	private boolean[] mChoice;
+	private boolean exitOnDialogClose = false;
 	
 	private final int NUM_SKIP_CHOICES = 4;
 	
@@ -85,6 +87,8 @@ public class MyAuthActivity extends Activity {
 	private final int DIALOG_INST = 1;
 	private final int DIALOG_SUB_ERROR = 2;
 	private final int DIALOG_SKIP_PICKER = 3;
+	private final int DIALOG_EXPLANATION_GIVER = 4;
+	private final int DIALOG_SEND_IN_BG_ON_EXIT = 5;
 	
 	private final int CONSENT_RESULT = 0;
 	private final int NEW_USER_RESULT = 1;
@@ -92,7 +96,7 @@ public class MyAuthActivity extends Activity {
 	private boolean mConsentRequested;
 	private final String INSTRUCTIONS = 
 			"Thank you for participating in this study!\n\n" +
-			"Detailed instructions can be found at http://casa.cmuchimps.org/instructions.html\n\n" +
+			"Detailed instructions can be found at http://casa.cmuchimps.org/instructions\n\n" +
 			"In short, please answer as many questions as you can everyday.\n\n" +
 			"Don't forget to hit Send Packets to Server (in the menu options) when you are finished!";
 	
@@ -110,6 +114,7 @@ public class MyAuthActivity extends Activity {
         radioSupp2 = (RadioGroup)this.findViewById(R.id.radioSupp2);
         radioSupp3 = (RadioGroup)this.findViewById(R.id.radioSupp3);
         input = (EditText)this.findViewById(R.id.user_answer);
+        send_to_server_message = (TextView)this.findViewById(R.id.send_to_server_message);
         
         /* Make UI elements pretty */
         submit.getBackground().setColorFilter(0xFF00FF00, PorterDuff.Mode.MULTIPLY);
@@ -194,6 +199,16 @@ public class MyAuthActivity extends Activity {
 			}
         });
         
+        send_to_server_message.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View arg0) {
+				if (mCommunicator.hasQueuedPackets()) {
+		    		exitOnDialogClose = false;
+					showDialog(DIALOG_SEND_IN_BG_ON_EXIT);
+		    	}
+			}
+        });
+        
         /* Initialize members */
         this.mCommunicator = new ServerCommunicator(this.getApplicationContext());
         this.mConsentRequested = false;
@@ -254,6 +269,8 @@ public class MyAuthActivity extends Activity {
     	this.setUpdaterAlarm();
     	this.setUploaderAlarm();
     	
+		send_to_server_message.setText((mCommunicator.hasQueuedPackets()) ? "You have responses to send to the server (?)." : "");
+		
     	/* Initialize location manager */
     	if (lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
@@ -270,7 +287,6 @@ public class MyAuthActivity extends Activity {
     		this.repopulateDB();
     		this.forcePollSubscriptions();
     	}
-        
         /* Control flow: consent form if not accepted => New User Activity if no user => Main Q/A activity */
     	if (!(new File(getFilesDir(),ConsentFormActivity.CONSENT_FILE)).exists()) {
     		this.forcePollSubscriptions();
@@ -300,7 +316,10 @@ public class MyAuthActivity extends Activity {
 		} else if (lm != null && lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
 		}
+		
+		send_to_server_message.setText((mCommunicator.hasQueuedPackets()) ? "You have responses to send to the server (?)." : "");
 		askQuestion();
+		this.cullOldDatabaseEntries();
     }
     
     @Override
@@ -322,6 +341,13 @@ public class MyAuthActivity extends Activity {
     	super.onPause();
     }
     
+    public void onBackPressed() {
+    	if (mCommunicator.hasQueuedPackets()) {
+    		showDialog(DIALOG_SEND_IN_BG_ON_EXIT);
+    		exitOnDialogClose = true;
+    	}
+    }
+    
     @Override
     public void onStop() {
     	lm.removeUpdates(ll);
@@ -334,7 +360,7 @@ public class MyAuthActivity extends Activity {
 	    	ServerCommunicator.serializePacketID(getFilesDir());
 	    	qg.serializeIDTrack();
     	} catch (IOException e) {
-    		System.out.println("Could not serialize...");
+    		System.out.println("Could not serialize packet id...");
     		e.printStackTrace();
     	}
     	
@@ -568,22 +594,13 @@ public class MyAuthActivity extends Activity {
         // Handle item selection
         switch (item.getItemId()) {
         	case (R.id.sendPackets):
-        		if (cm.getActiveNetworkInfo().isConnectedOrConnecting() && mCommunicator.hasQueuedPackets()) { 
-            		System.out.println("Starting service to upload packets...");
-        			Intent uploader = new Intent(getApplicationContext(),UploaderService.class);
-            		this.startService(uploader);
-            	}
-        		Toast.makeText(getApplicationContext(), "Sending in background...", Toast.LENGTH_SHORT).show();
+        		sendPacketsInBackground();
         		return true;
         	case (R.id.contact):
         		this.showDialog(DIALOG_CONTACT);
-        		//printFacts(mDbHelper.getAllFacts());
-        		//Toast.makeText(this, "Contact Info Selected", Toast.LENGTH_SHORT).show();
         		return true;
         	case (R.id.instructions):
         		this.showDialog(DIALOG_INST);
-        		//mCommunicator.printQueue();
-        		//Toast.makeText(this, "Instructions Selected", Toast.LENGTH_SHORT).show();
         		return true;
         	case (R.id.refresh):
         		this.forcePollSubscriptions();
@@ -660,26 +677,88 @@ public class MyAuthActivity extends Activity {
 				.setNeutralButton("OK", new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
-						String qtext = prevQ.getQuestion();
-						HashMap<String,String> question = prevQ.getQuestionMetas();
-						String user_id = getUser().unique_id;
-						String timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", System.currentTimeMillis());
-						try {
-							TransmittablePacket tp = new SkipQuestionPacket(qtext, question, mChoice[0],mChoice[1],mChoice[2],mChoice[3],"",timestamp,user_id);
-							mCommunicator.queuePacket(tp);
-							System.out.println(tp);
-						} catch (IOException e) {
-							e.printStackTrace();
-							Toast.makeText(getApplicationContext(), "An error occured. The packet could not be saved...", Toast.LENGTH_SHORT).show();
+						if (mChoice[3]) {
+							dialog.dismiss();
+							showDialog(DIALOG_EXPLANATION_GIVER);
+						} else {
+							queueSkipQuestionPacket("");
+							dialog.dismiss();
 						}
-						dialog.dismiss();
 					}
 				})
 				.setCancelable(false);
+    		return builder.create();
+    	case DIALOG_EXPLANATION_GIVER:
+    		LayoutInflater factory = LayoutInflater.from(this);
+            final View explanationDialogView = factory.inflate(R.layout.explanation_dialog, null);
+            builder.setTitle("Explanation for Other")
+                .setView(explanationDialogView)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    	final EditText explanationEditText = (EditText)explanationDialogView.findViewById(R.id.explanationEntry);
+                    	queueSkipQuestionPacket(explanationEditText.getText().toString());
+                        dialog.dismiss();
+                    }
+                })
+                .setNegativeButton("Skip", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    	queueSkipQuestionPacket("");
+                        dialog.dismiss();
+                    }
+                });
+    		return builder.create();
+    	case DIALOG_SEND_IN_BG_ON_EXIT:
+    		builder.setMessage("It looks like you have " + mCommunicator.numQueuedPackets() + " responses to send to the server.\n\n" +
+    				"Would you like to send them in the background now?")
+		    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					sendPacketsInBackground();
+					dialog.dismiss();
+					if (exitOnDialogClose) finish();
+				}
+			})
+			.setNegativeButton("Not Now", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					dialog.dismiss();
+					if (exitOnDialogClose) finish();
+				}
+			})
+			.setCancelable(true);
     		return builder.create();
     	default:
     		return null;
     	}
     }
     
+    private void queueSkipQuestionPacket(String explanation) {
+    	String qtext = prevQ.getQuestion();
+		HashMap<String,String> question = prevQ.getQuestionMetas();
+		String user_id = getUser().unique_id;
+		String timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", System.currentTimeMillis());
+		try {
+			TransmittablePacket tp = new SkipQuestionPacket(ServerCommunicator.getNextPacketID(getFilesDir()),qtext, question, mChoice[0],mChoice[1],mChoice[2],mChoice[3],explanation,timestamp,user_id);
+			mCommunicator.queuePacket(tp);
+			System.out.println(tp);
+		} catch (IOException e) {
+			e.printStackTrace();
+			Toast.makeText(getApplicationContext(), "An error occured. The packet could not be saved...", Toast.LENGTH_SHORT).show();
+		}
+    }
+    
+    private void sendPacketsInBackground() {
+    	if (cm.getActiveNetworkInfo().isConnected() && mCommunicator.hasQueuedPackets()) { 
+    		System.out.println("Starting service to upload packets...");
+			Intent uploader = new Intent(getApplicationContext(),UploaderService.class);
+    		this.startService(uploader);
+    		Toast.makeText(getApplicationContext(), "Sending in background...", Toast.LENGTH_SHORT).show();
+    	} else {
+    		Toast.makeText(getApplicationContext(), "Sorry, it appears you do not have internet connectivity...", Toast.LENGTH_SHORT).show();
+    	}
+    }
+    
+    private void cullOldDatabaseEntries() {
+    	(new CullingOldFactsTask()).execute(mDbHelper);
+    }
 }

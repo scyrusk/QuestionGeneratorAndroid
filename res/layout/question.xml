@@ -184,28 +184,41 @@
 			        android:layout_height="wrap_content"
 			        android:text="@string/five" />
 			</RadioGroup>
+			
+		    		
+	        <LinearLayout
+	        android:layout_height="wrap_content"
+	        android:layout_width="match_parent"
+	        android:orientation="horizontal">
+				<Button
+			   	    android:id="@+id/question_skip"
+			   	    android:layout_width="fill_parent"
+			   	    android:layout_height="wrap_content"
+			   	    android:layout_marginTop="15dp"
+			   	    android:layout_weight = "0.50"
+			   	    android:textColor="#FFFFFF"
+			   	    android:text="@string/skip" />
+			    <Button
+			   	    android:id="@+id/question_submit"
+			   	    android:layout_width="fill_parent"
+			   	    android:layout_height="wrap_content"
+			   	    android:layout_marginTop="15dp"
+			   	    android:layout_weight = "0.50"
+			   	    android:textColor="#FFFFFF"
+			   	    android:text="@string/submit" />
+		    </LinearLayout>
+		
+		    <TextView
+		        android:id="@+id/send_to_server_message"
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+		        android:gravity="center"
+		        android:textStyle="italic"
+		        android:layout_marginTop="10dp"
+		        android:text="" />
 		</LinearLayout>
 	</ScrollView>
 	
-    <LinearLayout
-        android:layout_height="wrap_content"
-        android:layout_width="match_parent"
-        android:orientation="horizontal">
-			<Button
-		   	    android:id="@+id/question_skip"
-		   	    android:layout_width="fill_parent"
-		   	    android:layout_height="wrap_content"
-		   	    android:layout_marginTop="15dp"
-		   	    android:layout_weight = "0.50"
-		   	    android:textColor="#FFFFFF"
-		   	    android:text="@string/skip" />
-		    <Button
-		   	    android:id="@+id/question_submit"
-		   	    android:layout_width="fill_parent"
-		   	    android:layout_height="wrap_content"
-		   	    android:layout_marginTop="15dp"
-		   	    android:layout_weight = "0.50"
-		   	    android:textColor="#FFFFFF"
-		   	    android:text="@string/submit" />
-    </LinearLayout>
+    
+
 </LinearLayout>

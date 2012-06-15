@@ -83,6 +83,7 @@ public class TransmissionPacket extends TransmittablePacket {
 	public List<NameValuePair> convertToNVP() {
 		List<NameValuePair> retVal = new ArrayList<NameValuePair>();
 		retVal.add(new BasicNameValuePair("rid",""+response_id));
+		retVal.add(new BasicNameValuePair("user_id", user_id));
         retVal.add(new BasicNameValuePair("type", ""+typeid));
         retVal.add(new BasicNameValuePair("qtext", qtext));
         retVal.add(new BasicNameValuePair("user_answer", user_answer));

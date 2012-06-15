@@ -217,6 +217,20 @@ public class KBDbAdapter {
     	return mDb.insert(FACTS_TABLE, null, fact_vals);
     }
     
+    public void cullOldFacts(String timestamp, int thresholdDays) {
+    	String pivotTime = (timestamp.equalsIgnoreCase("*") ? "'now'" : "'" + timestamp + "'");
+    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID }, "timestamp < datetime(" + pivotTime + ",'-" + thresholdDays + " days')", null, null, null, null);
+    	System.out.println("Culling " + c.getCount() + " fact(s)");
+    	if (c.getCount() > 0) {
+    		c.moveToFirst();
+    		while (!c.isAfterLast()) {
+    			this.deleteFact(c.getLong(0));
+    			c.moveToNext();
+    		}
+    	}
+    	c.close();
+    }
+    
     public long createTag(String tag_class,String subclass,String subvalue,String idtype,long idval) {
     	ContentValues tag_vals = new ContentValues();
     	long tagclass_id = this.findTagClassByName(tag_class);

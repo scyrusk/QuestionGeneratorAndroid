@@ -30,13 +30,13 @@ public class ServerCommunicator {
 	private final static String URL = "http://casa.cmuchimps.org/handler/index";
 	private final static String OK_RESP = "OK";
 	private final static String NOT_OK_RESP = "NOT OK";
-	private final static String SEND_USER_RESP = "SEND USER";
+	private final static String SEND_USER_RESP = "SEND_USER";
 	
 	private ArrayList<TransmittablePacket> mQueue;
 	private Context mContext;
 	private boolean mPopQueue;
 	private static int nextRespID = 0;
-	private static boolean loadNext = false;
+	private static boolean loadNext = true;
 	
 	public ServerCommunicator(Context c) {
 		mContext = c;
@@ -48,6 +48,11 @@ public class ServerCommunicator {
 			e.printStackTrace();
 			Log.d("ServerCommunicator","Cannot write new queue file");
 		}
+	}
+	
+	public void clearQueue() throws IOException {
+		mQueue.clear();
+		serializeQueue();
 	}
 	
 	public static int getNextPacketID(File filesDir) {
@@ -112,6 +117,19 @@ public class ServerCommunicator {
 			mPopQueue = false;
 		}
 		return mQueue.size() > 0;
+	}
+	
+	public int numQueuedPackets() {
+		if (mPopQueue) {
+			try {
+				populateQueue();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				return -1;
+			}
+			mPopQueue = false;
+		}
+		return mQueue.size();
 	}
 	
 	public void printQueue() {
@@ -187,6 +205,7 @@ public class ServerCommunicator {
 		    Log.d("ServerCommunicator","Response received is: ");
 		    System.out.println(resp);
 		    if (resp.equalsIgnoreCase(OK_RESP)) { //data secured on server
+		    	mQueue.remove(toSend);
 		    	return "OK";
 		    } else if (resp.equalsIgnoreCase(SEND_USER_RESP)) {
 		    	return sendUserPacket();
