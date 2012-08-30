@@ -20,16 +20,22 @@ public class TransmissionPacket extends TransmittablePacket {
 	public String user_answer; //the user's answer
 	public HashMap<String,String> supplementary_responses; //the answers to the supplementary questions
 	public String timestamp; //the time the user answered the question
+	public long amountTime; //TODO: the amount of time it took the user to answer the question
 	
 	public TransmissionPacket() {
-		initialize(-1,"","", new HashMap<String,String>(), new ArrayList<HashMap<String,String>>(), "", new HashMap<String,String>(), "");
+		initialize(-1,"","", new HashMap<String,String>(), new ArrayList<HashMap<String,String>>(), "", 
+				new HashMap<String,String>(), "", 0l);
 	}
 	
-	public TransmissionPacket(int rid,String uid,String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
-		initialize(rid,uid,qt,qs,as,ua,supp,ts);
+	public TransmissionPacket(int rid,String uid,String qt, HashMap<String,String> qs, 
+			ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, 
+			String ts, long at) {
+		initialize(rid,uid,qt,qs,as,ua,supp,ts, at);
 	}
 	
-	private void initialize(int rid,String uid,String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
+	private void initialize(int rid,String uid,String qt, HashMap<String,String> qs, 
+			ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, 
+			String ts, long at) {
 		response_id = rid;
 		typeid = 1;
 		user_id = uid;
@@ -41,6 +47,7 @@ public class TransmissionPacket extends TransmittablePacket {
 		user_answer = new String(ua);
 		supplementary_responses = UtilityFuncs.duplicateMap(supp);
 		timestamp = new String(ts);
+		amountTime = at;
 	}
 	
 	public void addQKey(String key, String value) {

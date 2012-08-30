@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 import android.app.Activity;
@@ -25,12 +26,17 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.PorterDuff;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -39,6 +45,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -69,11 +77,12 @@ public class MyAuthActivity extends Activity {
 	
 	private User mUser;
 	private ServerCommunicator mCommunicator;
+	private long questionStartTime;
 	
 	//form fields
 	TextView question_prompt;
 	TextView send_to_server_message;
-	EditText input;
+	AutoCompleteTextView input;
 	Button submit;
 	Button skip;
 	RadioGroup radioSupp1;
@@ -129,7 +138,7 @@ public class MyAuthActivity extends Activity {
         radioSupp1 = (RadioGroup)this.findViewById(R.id.radioSupp1);
         radioSupp2 = (RadioGroup)this.findViewById(R.id.radioSupp2);
         radioSupp3 = (RadioGroup)this.findViewById(R.id.radioSupp3);
-        input = (EditText)this.findViewById(R.id.user_answer);
+        input = (AutoCompleteTextView)this.findViewById(R.id.user_answer);
         send_to_server_message = (TextView)this.findViewById(R.id.send_to_server_message);
         
         /* Make UI elements pretty */
@@ -163,6 +172,7 @@ public class MyAuthActivity extends Activity {
 					 * Ask new question and reset fields
 					 */
 					if (currQ != null) {
+						long amountTime = System.currentTimeMillis() - questionStartTime;
 						String user_id = getUser().unique_id;
 						String qtext = currQ.getQuestion();
 						HashMap<String,String> question = currQ.getQuestionMetas();
@@ -174,7 +184,9 @@ public class MyAuthActivity extends Activity {
 						supplementary_responses.put("supp3",""+mSuppResponse3);
 						String timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", System.currentTimeMillis());
 						try {
-							mCommunicator.queuePacket(new TransmissionPacket(ServerCommunicator.getNextPacketID(getFilesDir()),user_id,qtext,question,answer_metas,user_answer,supplementary_responses,timestamp));
+							mCommunicator.queuePacket(new TransmissionPacket(ServerCommunicator.getNextPacketID(getFilesDir()),
+									user_id,qtext,question,answer_metas,user_answer,supplementary_responses,
+									timestamp, amountTime));
 						} catch (IOException e) {
 							e.printStackTrace();
 							Toast.makeText(getApplicationContext(), "An error occured. The packet could not be saved...", Toast.LENGTH_SHORT).show();
@@ -294,6 +306,7 @@ public class MyAuthActivity extends Activity {
         	
     		send_to_server_message.setText((mCommunicator.hasQueuedPackets()) ? "You have responses to send to the server (?)." : "");
     		
+    		questionStartTime = System.currentTimeMillis();
     		registerReceiver(packetUpdateReceiver, new IntentFilter(UploaderService.BROADCAST_ACTION));
     		printFacts(mDbHelper.getAllFacts());
     		
@@ -348,8 +361,6 @@ public class MyAuthActivity extends Activity {
     		Notification note = new Notification(R.drawable.ic_launcher, "A new notification", System.currentTimeMillis());
     		note.flags |= Notification.FLAG_AUTO_CANCEL;
     		note.number += 1;
-    		
-    		printFacts(mDbHelper.getAllFacts());
     		this.cullOldDatabaseEntries();
     	}
     }
@@ -493,7 +504,6 @@ public class MyAuthActivity extends Activity {
 				// TODO Auto-generated method stub
 				
 			}
-			
 		};
     }
     
@@ -507,6 +517,33 @@ public class MyAuthActivity extends Activity {
     	currQ = qg.askQuestion();
         if (currQ != null) {
 	        question_prompt.setText(currQ.getQuestion());
+	        input.setAdapter(null);
+	        if (!currQ.getAutoCompl().equalsIgnoreCase("none")) {
+	        	//replace TextView with AutocompleteTextView
+	        	ArrayList<String> autoents = new ArrayList<String>();
+	        	if (currQ.getAutoCompl().equalsIgnoreCase("contacts")) {
+	        		Cursor c = this.getContentResolver().query(
+	        				ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+	        				new String[] { Phone.DISPLAY_NAME }, null, null, null);
+	        		if (c.getCount() > 0) {
+	        			c.moveToFirst();
+	        			while (!c.isAfterLast()) {
+	        				autoents.add(c.getString(0));
+	        				c.moveToNext();
+	        			}
+	        		}
+	        		c.close();
+	        	} else if (currQ.getAutoCompl().equalsIgnoreCase("apps")) {
+	        		PackageManager pm = this.getPackageManager();
+	        		List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+	        		for (ApplicationInfo pi : packages) autoents.add(pi.packageName);
+	        	}
+	        	
+	        	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+	            		android.R.layout.simple_dropdown_item_1line, autoents.toArray(new String[autoents.size()]));
+	        	input.setAdapter(adapter);
+	        }
+	        questionStartTime = System.currentTimeMillis();
         } else {
         	Toast.makeText(getApplicationContext(), "We do not have enough data to create a question yet, come back later!", Toast.LENGTH_SHORT).show();
         }

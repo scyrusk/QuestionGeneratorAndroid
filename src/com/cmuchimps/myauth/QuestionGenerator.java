@@ -53,27 +53,34 @@ public class QuestionGenerator {
 		private HashMap<String,Float> answers;
 		private HashMap<String,String> question_metas; //should contain at least timestamp
 		private ArrayList<HashMap<String,String>> answer_metas;
+		private boolean mapview;
+		private String auto;
 		
 		public QuestionAnswerPair() {
-			initialize("", new HashMap<String,Float>(), new HashMap<String,String>(), new ArrayList<HashMap<String,String>>());
+			initialize("", new HashMap<String,Float>(), new HashMap<String,String>(), new ArrayList<HashMap<String,String>>(), false, "none");
 		}
 		
-		public QuestionAnswerPair(String q, HashMap<String,Float> as, HashMap<String,String> qms, ArrayList<HashMap<String,String>> ams) {
-			initialize(q, as, qms, ams);
+		public QuestionAnswerPair(String q, HashMap<String,Float> as, HashMap<String,String> qms, ArrayList<HashMap<String,String>> ams,
+				boolean mv, String au) {
+			initialize(q, as, qms, ams, mv, au);
 		}
 		
-		public QuestionAnswerPair(String q, ArrayList<String> as, HashMap<String,String> qms, ArrayList<HashMap<String,String>> ams) {
+		public QuestionAnswerPair(String q, ArrayList<String> as, HashMap<String,String> qms, ArrayList<HashMap<String,String>> ams,
+				boolean mv, String au) {
 			HashMap<String,Float> acouples = new HashMap<String,Float>();
 			for (String a : as)
 				acouples.put(a, 0.5f);
-			initialize(q,acouples,qms,ams);
+			initialize(q,acouples,qms,ams, mv, au);
 		}
 		
-		private void initialize(String q, HashMap<String,Float> as,HashMap<String,String> qms,ArrayList<HashMap<String,String>> ams) {
+		private void initialize(String q, HashMap<String,Float> as,HashMap<String,String> qms,ArrayList<HashMap<String,String>> ams,
+				boolean mv, String au) {
 			question = q;
 			answers = as;
 			question_metas = qms;
 			answer_metas = ams;
+			mapview = mv;
+			auto = au;
 		}
 		
 		public Float get(String a) {
@@ -99,6 +106,9 @@ public class QuestionGenerator {
 			}
 			return false;
 		}
+		
+		public String getAutoCompl() { return auto; }
+		public boolean getMapView() { return mapview; }
 	}
 	
 	public QuestionGenerator(KBDbAdapter kbdb, DataWrapper ddub, File filesDir) {
@@ -208,6 +218,13 @@ public class QuestionGenerator {
 						answers.put(f.getTagAt(matches[0]).getSV(),0.5f);
 					}
 				}
+				
+				//should also check if acond_descs contain mapview or autocompl hints
+				boolean mapViewAnswer = acond_descs.contains("mapview");
+				String autocompl = (acond_descs.contains("autocompl-contacts") ?
+						"contacts" : 
+						(acond_descs.contains("autocompl-apps") ? "apps" : "none"));
+						
 				//also mark which Acond tag condition has been matched with the answer
 				/*int qat_acond_chosen = -1;
 				for (int i = 0; i < theQAT.getAcond().getAllTags().length; i++) {
@@ -268,7 +285,7 @@ public class QuestionGenerator {
 				}
 				
 				mDbHelper.registerFactAsQueried(fact.getID());
-				return new QuestionAnswerPair(question,answers,question_metas,answer_metas);
+				return new QuestionAnswerPair(question,answers,question_metas,answer_metas, mapViewAnswer, autocompl);
 			}
 		}
 		

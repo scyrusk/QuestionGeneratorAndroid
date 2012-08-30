@@ -19,7 +19,7 @@
 		        android:paddingLeft="5dp"
 		        android:text="@string/placeholder" />
 		
-		    <EditText
+		    <AutoCompleteTextView
 		        android:id="@+id/user_answer"
 		        android:layout_width="match_parent"
 		        android:layout_height="wrap_content"
@@ -27,7 +27,7 @@
 		        android:gravity="left|center_vertical" >
 		
 		        <requestFocus />
-		    </EditText>
+		    </AutoCompleteTextView>
 		    
 		    <TextView
 		        android:id="@+id/q_instructions"

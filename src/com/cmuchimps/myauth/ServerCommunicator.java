@@ -230,9 +230,4 @@ public class ServerCommunicator {
 		
 		return "NOT OK";
 	}
-	
-	private String sendPacket(int rid,String uid,String qt, HashMap<String,String> qs, ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, String ts) {
-		return sendPacket(new TransmissionPacket(rid,uid,qt,qs,as,ua,supp,ts));
-	}
-	
 }
