@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import android.util.Log;
+
 public class DataWrapper {
 	private KBDbAdapter mDbHelper;
 	
@@ -82,6 +84,7 @@ public class DataWrapper {
 	 *
 	 */
 	public class Fact extends Component {
+		private String queried;
 		private String timestamp;
 		private String dayOfWeek;
 		private Meta[] metas;
@@ -91,14 +94,14 @@ public class DataWrapper {
 		private Long[] tag_indices; //lazy evaluation for memory efficieny
 		
 		public Fact() {
-			initialize(-1, "", "", new Long[0], new Long[0]);
+			initialize(-1, "", "", new Long[0], new Long[0], "");
 		}
 		
-		public Fact(long id, String ts, String dow, Long[] mi, Long[] ti) {
-			initialize(id, ts, dow, mi, ti);
+		public Fact(long id, String ts, String dow, Long[] mi, Long[] ti, String q) {
+			initialize(id, ts, dow, mi, ti, q);
 		}
 		
-		private void initialize(long id,String ts, String dow, Long[] mi, Long[] ti) {
+		private void initialize(long id,String ts, String dow, Long[] mi, Long[] ti, String q) {
 			_id = id;
 			timestamp = ts;
 			dayOfWeek = dow;
@@ -108,10 +111,12 @@ public class DataWrapper {
 			for (int i = 0; i < ti.length; i++) tag_indices[i] = ti[i];
 			metas = new Meta[mi.length];
 			tags = new Tag[ti.length];
+			queried = q;
 		}
 		
 		public String getTimestamp() { return timestamp; }
 		public String getDayOfWeek() { return dayOfWeek; }
+		public boolean getQueried() { return mDbHelper.isFactQueried(_id); }
 		
 		public Meta[] getAllMetas() {
 			int counter = 0;
@@ -196,6 +201,7 @@ public class DataWrapper {
 			StringBuffer retVal = new StringBuffer(compiled + "fact::" + _id + "{\n");
 			retVal.append(compiled + "\tTimestamp: " + this.timestamp + "\n");
 			retVal.append(compiled + "\tDay Of Week: " + this.dayOfWeek + "\n");
+			retVal.append(compiled + "\tQueried: " + this.queried + "\n");
 			if (metas.length > 0) {
 				retVal.append(compiled + "\tMetas:\n");
 				Meta[] temp = getAllMetas();
@@ -391,7 +397,7 @@ public class DataWrapper {
 		}
 		
 		public Qcond getQcondAt(int index) {
-			System.out.println("Fetching Qcond at: " + index + ", which corresponds to DB qcond at : " + qcond_indices[index]);
+			Log.d("DataWrapper", "Fetching Qcond at: " + index + ", which corresponds to DB qcond at : " + qcond_indices[index]);
 			if (index >= qcond_indices.length) return null;
 			if (qconds[index] == null) qconds[index] = mDbHelper.getQcond(qcond_indices[index]);
 			return qconds[index];
@@ -423,7 +429,7 @@ public class DataWrapper {
 		 * @return
 		 */
 		public Integer[] matches(Fact fact) {
-			System.out.println("Qtext = " + qtext);
+			Log.d("DataWrapper", "Qtext = " + qtext);
 			HashMap<String,HashMap<String,Integer>> tagCounter = fact.createTagCounter();
 			//match all possible qconds/aconds with one possible instantiation right away
 			//match flexible ones using dynamic programming
@@ -450,7 +456,7 @@ public class DataWrapper {
 			for (int i = 0; i < qatbyfact.length; i++) {
 				Integer[] matchingIdxs = UtilityFuncs.getMatches(qatbyfact[i]);
 				if (matchingIdxs.length == 0) {
-					System.out.println("(" + i + "): No matching tag for " + (i == 0 ? getAcond().toString(0) : getQcondAt(i-1).toString(0)));
+					Log.d("DataWrapper", "(" + i + "): No matching tag for " + (i == 0 ? getAcond().toString(0) : getQcondAt(i-1).toString(0)));
 					return null; //no matches found
 				} else if (matchingIdxs.length == 1) { //exactly one match found, must set to this
 					//decrement tag counter
@@ -505,7 +511,7 @@ public class DataWrapper {
 				if (currentRow == keys.length) return matches;
 			}
 			
-			System.out.println("No matches found..no matches for mults");
+			Log.d("DataWrapper", "No matches found..no matches for mults");
 			return null;
 		}
 		

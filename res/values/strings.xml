@@ -4,7 +4,7 @@
     <string name="app_name">MyAuth</string>
     <string name="user_activity_name">New User Form</string>
     <string name="consent_activity_name">Consent Form</string>
-    <string name="placeholder">Placeholder Text...</string>
+    <string name="placeholder">We could not create a question at this time. Hit \'Skip Question\' to try again.</string>
     
     <string name="user_form_prompt">Thanks for participating in this study! First, please fill out the following form:</string>
 	<string name="UA_age_prompt">Age:</string>
@@ -39,4 +39,5 @@
 	<string name="main_menu_contact">Contact Info</string>
 	<string name="main_menu_instructions">Instructions</string>
 	<string name="main_menu_refresh">Update Knowledge</string>
+	<string name="main_menu_delete">Destroy Database</string>
 </resources>

@@ -23,6 +23,7 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -113,7 +114,7 @@ public class DebugActivity extends Activity {
         		if (temp != null && temp.getCount() > 0) {
         			temp.moveToFirst();
         			while (!temp.isAfterLast()) {
-        				System.out.println("Date in millis: " + temp.getString(temp.getColumnIndex(Calls.DATE)));
+        				Log.d("DebugActivity", "Date in millis: " + temp.getString(temp.getColumnIndex(Calls.DATE)));
         				temp.moveToNext();
         			}
         		}*/
@@ -140,12 +141,12 @@ public class DebugActivity extends Activity {
         this.initializeLocationListener();
         cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
         //this.deleteUser();
-        /*System.out.println("Testing QAT-Fact");
+        /*Log.d("DebugActivity", "Testing QAT-Fact");
         ArrayList<Fact> testFacts = new ArrayList<Fact>();
         testFacts.add(mDbHelper.getFact(64l));
-        System.out.println("QText := " + mDbHelper.getQAT(6l).getQText());
+        Log.d("DebugActivity", "QText := " + mDbHelper.getQAT(6l).getQText());
         this.qg.testQATagainstFacts(mDbHelper.getQAT(6l), testFacts);
-        System.out.println("Ending QAT-Fact test");*/
+        Log.d("DebugActivity", "Ending QAT-Fact test");*/
         //this.forcePollSubscriptions();
         //UtilityFuncs.TestingFLEXJson(this.getFilesDir());
     }
@@ -158,8 +159,8 @@ public class DebugActivity extends Activity {
     	} else {
     		try {
 				mUser = User.load(getFilesDir());
-				System.out.println("User:");
-				System.out.println(mUser);
+				Log.d("DebugActivity", "User:");
+				Log.d("DebugActivity", mUser.toString());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -181,8 +182,8 @@ public class DebugActivity extends Activity {
     	} else {
     		try {
 				mUser = User.load(getFilesDir());
-				System.out.println("User:");
-				System.out.println(mUser);
+				Log.d("DebugActivity", "User:");
+				Log.d("DebugActivity", mUser.toString());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -228,9 +229,9 @@ public class DebugActivity extends Activity {
 				//create fact about location here
 				//2 tags: person:User was at location:Towers=
 				//also get Timestamp and day of week
-				System.out.println("Location changed event has triggered for some reason.");
+				Log.d("DebugActivity", "Location changed event has triggered for some reason.");
 				if (System.currentTimeMillis() > mDbHelper.getSubscriptionDueTimeFor("Location")) {
-					System.out.println("adding location fact from location listener");
+					Log.d("DebugActivity", "adding location fact from location listener");
 					String timestamp, dayOfWeek;
 					ArrayList<HashMap<String,String>> tags = new ArrayList<HashMap<String,String>>(),metas = new ArrayList<HashMap<String,String>>();
 					Date date = new Date(location.getTime());
@@ -304,16 +305,16 @@ public class DebugActivity extends Activity {
     }
     
     private void printFacts(Long[] facts) {
-    	System.out.println("ALL FACTS:\n");
+    	Log.d("DebugActivity", "ALL FACTS:\n");
         for (Long l : facts) {
-        	System.out.println(mDbHelper.getFact(l));
+        	Log.d("DebugActivity", mDbHelper.getFact(l).toString());
         }
     }
     
     private void printQATS(Long[] qats) {
-        System.out.println("ALL QATS:\n");
+        Log.d("DebugActivity", "ALL QATS:\n");
         for (Long l : qats) { 
-        	System.out.println(mDbHelper.getQAT(l));
+        	Log.d("DebugActivity", mDbHelper.getQAT(l).toString());
         }
     }
     
@@ -343,7 +344,7 @@ public class DebugActivity extends Activity {
 			BufferedReader br = new BufferedReader(new InputStreamReader(file));
 			String input;
 			while ((input = br.readLine()) != null) {
-				if (this.mDbHelper == null) System.out.println("mDbHelper is null?");
+				if (this.mDbHelper == null) Log.d("DebugActivity", "mDbHelper is null?");
 				this.mDbHelper.createTagClass(input.replace("\n", ""));
 			}
 		} catch (FileNotFoundException e) {
@@ -387,16 +388,16 @@ public class DebugActivity extends Activity {
      * Mainly for testing purposes. Manually starts intent to update all subscriptions, regardless of whether or not they are due.
      */
     private void forcePollSubscriptions() {
-    	System.out.println("Entering force poll subscriptions...");
+    	Log.d("DebugActivity", "Entering force poll subscriptions...");
     	/*Cursor c = mDbHelper.fetchAllSubscriptions(new String[] { "subskey", "class_name", "last_update", "poll_interval"}, null, null, null);
-    	//System.out.println("Current time millis: " + System.currentTimeMillis());
+    	//Log.d("DebugActivity", "Current time millis: " + System.currentTimeMillis());
     	if (c.getCount() > 0) {
     		c.moveToFirst();
     		while (!c.isAfterLast()) {
     			for (int i = 0; i < c.getColumnCount(); i++) {
     				System.out.print(c.getString(i) + ",");
     			}
-    			System.out.println();
+    			Log.d("DebugActivity", );
     			c.moveToNext();
     		}
     	}*/
@@ -415,17 +416,17 @@ public class DebugActivity extends Activity {
     	
     	for (int i = 0; i < SensorSubscriptions.length; i++) {
 			if (!mDbHelper.subscriptionExists(SensorSubscriptions[i])) {
-				//System.out.println(System.currentTimeMillis());
+				//Log.d("DebugActivity", System.currentTimeMillis());
 				mDbHelper.createSubscription(SensorSubscriptions[i], PollIntervals[i], System.currentTimeMillis() - (1*UtilityFuncs.DAY_TO_MILLIS), "com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + SensorSubscriptions[i] + "KnowledgeSubscription");
 				try {
 					Class c = Class.forName("com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + SensorSubscriptions[i] + "KnowledgeSubscription");
 					if (!(Modifier.isStatic(c.getModifiers()) || Modifier.isAbstract(c.getModifiers()))) {
 						KnowledgeSubscription ks = (KnowledgeSubscription) c.getDeclaredConstructor(new Class[] { KnowledgeTranslatorWrapper.class }).newInstance(new Object[] { this.ktw });
 						c.getMethod("poll", null).invoke(ks, null);
-						System.out.println("Successfully polled " + SensorSubscriptions[i] + "KnowledgeSubscription!");
+						Log.d("DebugActivity", "Successfully polled " + SensorSubscriptions[i] + "KnowledgeSubscription!");
 					}
 				} catch (Throwable e) {
-					System.out.println("Failed to update class " + SensorSubscriptions[i]);
+					Log.d("DebugActivity", "Failed to update class " + SensorSubscriptions[i]);
 					e.printStackTrace();
 				}
 			}

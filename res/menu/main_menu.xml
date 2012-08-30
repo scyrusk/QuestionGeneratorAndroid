@@ -12,4 +12,7 @@
     <item android:id="@+id/refresh"
           android:icon="@drawable/refresh_icon"
           android:title="@string/main_menu_refresh"/>
+    <item android:id="@+id/delete"
+          android:icon="@drawable/delete_icon"
+          android:title="@string/main_menu_delete"/>
 </menu>

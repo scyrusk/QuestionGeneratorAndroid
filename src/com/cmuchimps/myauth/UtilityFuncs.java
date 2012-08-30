@@ -3,6 +3,7 @@ package com.cmuchimps.myauth;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import android.util.Log;
 import flexjson.JSONDeserializer;
 import flexjson.JSONSerializer;
 
@@ -53,7 +55,7 @@ public class UtilityFuncs {
 		for (int i = 1; i < composite.length; i++) {
 			sb.append(glue + composite[i]);
 		}
-		System.out.println(sb.toString());
+		Log.d("UtilityFuncs", sb.toString());
 		return sb.toString();
 	}
 	
@@ -153,18 +155,18 @@ public class UtilityFuncs {
 			ArrayList<TransmittablePacket> hi = new ArrayList<TransmittablePacket>();
 			hi.add(temp);
 			hi.add(us);
-			System.out.println("Before:");
-			System.out.println(temp);
+			Log.d("UtilityFuncs", "Before:");
+			Log.d("UtilityFuncs", temp.toString());
 			Writer writer = new BufferedWriter(new FileWriter(new File(filesDir,"temp.json")));
 		    new JSONSerializer().deepSerialize(hi,writer);
 		    writer.flush();
 		    writer.close();
 		    Reader reader = new BufferedReader(new FileReader(new File(filesDir,"temp.json")));
-		    //System.out.println("Serialized = " + s);
+		    //Log.d("UtilityFuncs", "Serialized = " + s);
 		    ArrayList<TransmittablePacket> response = new JSONDeserializer<ArrayList<TransmittablePacket>>().deserialize(reader, ArrayList.class );
-		    System.out.println(response.size() + " transmission packets!");
+		    Log.d("UtilityFuncs", response.size() + " transmission packets!");
 		    for (TransmittablePacket tp : response)
-		    	System.out.println(tp);
+		    	Log.d("UtilityFuncs", tp.toString());
 		 } catch (Exception e) {
 			 e.printStackTrace();
 		 }
@@ -184,5 +186,22 @@ public class UtilityFuncs {
 	
 	public static String bin2hex(byte[] data) {
 		return String.format("%0" + (data.length * 2) + 'x', new BigInteger(1, data));
+	}
+	
+	public static void dumpFileInfo(File f) {
+		Log.d("UtilityFuncs", "dumping file info");
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(f));
+			String input = null;
+			while ((input = br.readLine()) != null) {
+				Log.d("UtilityFuncs", input);
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

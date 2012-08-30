@@ -1,14 +1,12 @@
 package com.cmuchimps.myauth;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 
 /**
  * Presently only meant to add facts. All other functionalities are either unimplemented or flakey.
@@ -119,7 +117,7 @@ public class MyAuthProvider extends ContentProvider {
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
-		System.out.println("Content provider query URI : " + uri.toString());
+		Log.d("MyAuthProvider", "Content provider query URI : " + uri.toString());
 		int uriType = sURIMatcher.match(uri);
 		Cursor c = null;
 		
@@ -137,7 +135,7 @@ public class MyAuthProvider extends ContentProvider {
 			c = mDbHelper.fetchSubscription(Long.parseLong(uri.getLastPathSegment()), projection);
 			break;
 		case SUBSCRIPTIONS_DUE:
-			System.out.println("MyAuthProvider::fetching due subscriptions from query method");
+			Log.d("MyAuthProvider", "MyAuthProvider::fetching due subscriptions from query method");
 			c = mDbHelper.fetchDueSubscriptions();
 			break;
 		default:

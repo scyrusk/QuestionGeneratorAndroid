@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import android.text.format.DateFormat;
+
 import com.cmuchimps.myauth.DataWrapper.Fact;
 import com.cmuchimps.myauth.DataWrapper.Meta;
 import com.cmuchimps.myauth.DataWrapper.QAT;
@@ -26,18 +28,13 @@ public class QuestionGenerator {
 	private File mFilesDir;
 	
 	private IDTracker mIDTrack;
-	private boolean mLoadID = true;
 	
-	//lazy loaded
-	private int getNextID(boolean qid) throws IOException {
-		if (mLoadID) {
-			if (new File(mFilesDir,NEXT_ID_FILE).exists()) mIDTrack = new JSONDeserializer<IDTracker>().deserialize(new BufferedReader(new FileReader(new File(mFilesDir, NEXT_ID_FILE))), IDTracker.class );
-			else {
-				mIDTrack = new IDTracker();
-			}
-			mLoadID = false;
+	// lazy loaded
+	private long getNextID(boolean qid) {
+		if (mIDTrack == null) {
+			mIDTrack = new IDTracker();
 		}
-		int retVal = (qid ? mIDTrack.nextQID++ : mIDTrack.nextAID++);
+		long retVal = (qid ? mIDTrack.getNextQID() : mIDTrack.getNextAID());
 		return retVal;
 	}
 	
@@ -113,11 +110,6 @@ public class QuestionGenerator {
 	public void testQATagainstFacts(QAT theQat,List<Fact> facts) {
 		for (Fact fact : facts) {
 			Integer[] result = theQat.matches(fact);
-			if (result != null) {
-				System.out.println("matches!");
-			} else {
-				System.out.println("no match!");
-			}
 		}
 	}
 	
@@ -136,7 +128,10 @@ public class QuestionGenerator {
 		ArrayList<Long> facts = new ArrayList<Long>();
 		//System.out.println("length of afacts:" + afacts.length);
 		//Long[] temp = mDbHelper.getFilteredFactsByTime(24*60*60*1000, mDbHelper.getFact(afacts[MyAuthActivity.r.nextInt(afacts.length)]).getTimestamp());
-		Long[] temp = mDbHelper.getFilteredFactsByTime(24*60*60*1000, "*");
+		String pivotTime = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", 
+				System.currentTimeMillis() - 6*UtilityFuncs.HOUR_TO_MILLIS);
+		
+		Long[] temp = mDbHelper.getFilteredFactsByTime(24*UtilityFuncs.HOUR_TO_MILLIS, pivotTime);
 		//Long[] temp = afacts;
 		HashMap<Fact,ArrayList<Long>> factCompression = new HashMap<Fact,ArrayList<Long>>();
 		for (Long l : temp) {
@@ -155,26 +150,30 @@ public class QuestionGenerator {
 		}
 		//Long[] temp = afacts;
 		for (Long l : temp) { facts.add(l); }
-		System.out.println("Sup, here are the different types of facts (" + factCompression.size() + "):");
-		for (Fact f : factCompression.keySet()) {
-			System.out.println(f);
-			System.out.println("****" + factCompression.get(f).size() + "****");
-		}
-		//System.out.println("Number of qualifying facts: " + facts.size());
+		System.out.println("Different types of facts:" + factCompression.size());
+		System.out.println("Number of qualifying facts: " + facts.size());
 		while (facts.size() > 0) {
 			int index = MyAuthActivity.r.nextInt(factCompression.size());
-			ArrayList<Long> simFactStructures = factCompression.get(factCompression.keySet().toArray(new Fact[factCompression.size()])[index]);
+			Fact fc_key = factCompression.keySet().toArray(new Fact[factCompression.size()])[index];
+			ArrayList<Long> simFactStructures = factCompression.get(fc_key);
 			index = MyAuthActivity.r.nextInt(simFactStructures.size());
 			Fact fact = mDbHelper.getFact(simFactStructures.get(index));
 			HashMap<Long,Integer[]> fqats = new HashMap<Long,Integer[]>(); //qat index => matching matrix
-			System.out.println(fact.toString(0));
-	        for (Long l : qats) {
+	        if (fact.getQueried()) {
+	        	facts.remove(fact); //removes fact from fact collection
+	        	simFactStructures.remove(index);
+	        	if (simFactStructures.size() <= 0)
+	        		factCompression.remove(fc_key);
+	        	continue;
+	        }
+			for (Long l : qats) {
 	        	Integer[] result = mDbHelper.getQAT(l).matches(fact);
 	        	if (result != null) {
 	        		fqats.put(l, result);
 	        	}
 	        }
 			if (fqats.size() == 0) { //no matches
+				// System.out.println("couldn't find askable fact");
 				facts.remove(index);
 				continue;
 			} else {
@@ -220,6 +219,7 @@ public class QuestionGenerator {
 						}
 					}
 				}*/
+				
 				//Substitute qconds appropriately
 				for (int i = 1; i < matches.length; i++) {
 					int refVal = i - 1;
@@ -240,12 +240,8 @@ public class QuestionGenerator {
 				}
 				
 				HashMap<String,String> question_metas = new HashMap<String,String>();
-				int nextQID;
-				try {
-					nextQID = getNextID(true);
-				} catch (IOException e) {
-					nextQID = MyAuthActivity.r.nextInt(Integer.MAX_VALUE);
-				}
+				long nextQID = getNextID(true);
+				
 				question_metas.put("qid", ""+ nextQID);
 				question_metas.put("timestamp", fact.getTimestamp());
 				question_metas.put("qatid", "" + theQAT.getID());
@@ -255,34 +251,27 @@ public class QuestionGenerator {
 				
 				ArrayList<HashMap<String,String>> answer_metas = new ArrayList<HashMap<String,String>>();
 				HashMap<String,String> answer_meta = new HashMap<String,String>();
-				int nextAID;
-				try {
-					nextAID = getNextID(true);
-				} catch (IOException e) {
-					nextAID = MyAuthActivity.r.nextInt(Integer.MAX_VALUE);
-				}
+				long nextAID = getNextID(false);
+				
 				answer_meta.put("aid", ""+nextAID);
 				answer_meta.put("timestamp",fact.getTimestamp());
 				answer_meta.put("value", fact.getTagAt(matches[0]).getSV());
 				answer_meta.put("correct", "yes");
 				answer_metas.add(answer_meta);
 				for (Fact f : simFacts) {
-					try {
-						nextAID = getNextID(true);
-					} catch (IOException e) {
-						nextAID = MyAuthActivity.r.nextInt(Integer.MAX_VALUE);
-					}
+					nextAID = getNextID(false);
 					answer_meta = new HashMap<String,String>();
 					answer_meta.put("aid", ""+nextAID);
 					answer_meta.put("timestamp", f.getTimestamp());
 					answer_meta.put("value", f.getTagAt(matches[0]).getSV());
 					answer_meta.put("correct", "no");
 				}
+				
+				mDbHelper.registerFactAsQueried(fact.getID());
 				return new QuestionAnswerPair(question,answers,question_metas,answer_metas);
 			}
 		}
 		
-		System.out.println("Returning null, no facts found");
 		return null;
 	}
 	
@@ -303,7 +292,6 @@ public class QuestionGenerator {
 				//hour of day
 				String hod = fact.getTimestamp().split("[T ]")[1].split(":")[0];
 				int i = Integer.parseInt(hod);
-				System.out.println("Hour of day val:" + i);
 				String ampm = "am";
 				if (i >= 12) {
 					ampm = "pm";

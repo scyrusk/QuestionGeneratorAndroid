@@ -11,17 +11,20 @@ public final class R {
     public static final class attr {
     }
     public static final class drawable {
-        public static final int contact_info_icon=0x7f020000;
-        public static final int ic_launcher=0x7f020001;
-        public static final int instructions_icon=0x7f020002;
-        public static final int phone_icon=0x7f020003;
-        public static final int refresh_icon=0x7f020004;
-        public static final int send_icon=0x7f020005;
+        public static final int authentication=0x7f020000;
+        public static final int contact_info_icon=0x7f020001;
+        public static final int delete_icon=0x7f020002;
+        public static final int ic_launcher=0x7f020003;
+        public static final int instructions_icon=0x7f020004;
+        public static final int phone_icon=0x7f020005;
+        public static final int refresh_icon=0x7f020006;
+        public static final int send_icon=0x7f020007;
     }
     public static final class id {
         public static final int accept=0x7f070005;
         public static final int age_entry=0x7f07002e;
         public static final int contact=0x7f07003b;
+        public static final int delete=0x7f07003e;
         public static final int email_entry=0x7f07002c;
         public static final int ethRadioAsian=0x7f070038;
         public static final int ethRadioBlack=0x7f070035;
@@ -112,6 +115,7 @@ public final class R {
         public static final int four=0x7f05001a;
         public static final int hello=0x7f050000;
         public static final int main_menu_contact=0x7f05001f;
+        public static final int main_menu_delete=0x7f050022;
         public static final int main_menu_instructions=0x7f050020;
         public static final int main_menu_refresh=0x7f050021;
         public static final int main_menu_send=0x7f05001e;

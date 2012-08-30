@@ -27,6 +27,7 @@ import android.provider.ContactsContract.PhoneLookup;
 import android.provider.MediaStore;
 import android.provider.UserDictionary;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.widget.Toast;
 
 public class KnowledgeTranslatorWrapper extends Service {
@@ -58,7 +59,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 				}
 				(new UpdaterTask()).execute(dueSubs);
 			} else {
-				System.out.println("No subscriptions due for an update at " + System.currentTimeMillis() + ".");
+				Log.d("KnowledgeTranslatorWrapper", "No subscriptions due for an update at " + System.currentTimeMillis() + ".");
 			}
 			c.close();
 		}
@@ -93,15 +94,15 @@ public class KnowledgeTranslatorWrapper extends Service {
 			for (int i = 0; i < params.length; i++) {
 				String s = params[i];
 				try {
-					System.out.println("com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + s + "KnowledgeSubscription");
+					Log.d("KnowledgeTranslatorWrapper", "com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + s + "KnowledgeSubscription");
 					Class c = Class.forName("com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + s + "KnowledgeSubscription");
 					if (!(Modifier.isStatic(c.getModifiers()) || Modifier.isAbstract(c.getModifiers()))) {
 						KnowledgeSubscription ks = (KnowledgeSubscription) c.getDeclaredConstructor(new Class[] { KnowledgeTranslatorWrapper.class }).newInstance(new Object[] { thisObj });
 						c.getMethod("poll", null).invoke(ks, null);
-						System.out.println("Successfully polled " + s);
+						Log.d("KnowledgeTranslatorWrapper", "Successfully polled " + s);
 					}
 				} catch (Throwable e) {
-					System.out.println("Failed to update class " + s + "KnowledgeSubscription because of " + e.getMessage());
+					Log.d("KnowledgeTranslatorWrapper", "Failed to update class " + s + "KnowledgeSubscription because of " + e.getMessage());
 					e.printStackTrace();
 				}
 			}
@@ -126,7 +127,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 		protected void reset_update_time(String db_key) {
 			//update last update time for this subscription
 			/*if (db_key == null || db_key.equalsIgnoreCase("")) {
-				System.out.println("Failed to reset because of empty db_key");
+				Log.d("KnowledgeTranslatorWrapper", "Failed to reset because of empty db_key");
 			} else {
 				mDbHelper.updateSubscriptionTime(db_key, System.currentTimeMillis());
 			}*/
@@ -149,7 +150,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 		
 		@Override
 		public void poll() {
-			System.out.println("Entering communication knowledge subscription");
+			Log.d("KnowledgeTranslatorWrapper", "Entering communication knowledge subscription");
 			// TODO Auto-generated method stub
 			//things like SMS contacts, outgoing calls etc.
 			//Cursor c = Browser.getAllVisitedUrls(mCtx.getContentResolver());
@@ -163,7 +164,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 				long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
 				last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
 			} else {
-				System.out.println("Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
+				Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
 			}
 			update_c.close();
 			
@@ -174,10 +175,10 @@ public class KnowledgeTranslatorWrapper extends Service {
 			 */
 			
 			Cursor c = getContentResolver().query(CallLog.Calls.CONTENT_URI, new String[] { Calls.DATE, Calls.NUMBER, Calls.DURATION, Calls.TYPE, Calls.CACHED_NAME}, Calls.DATE + " > " + last_updated, null, null);
-			if (c == null) System.out.println(db_key + " Calls.CONTENT_URI returned null cursor; check the URI");
+			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " Calls.CONTENT_URI returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
-					System.out.println("CallLogs query returns empty cursor.");
+					Log.d("KnowledgeTranslatorWrapper", "CallLogs query returns empty cursor.");
 				}
 			}
 			if (c != null && c.getCount() > 0) {
@@ -243,10 +244,10 @@ public class KnowledgeTranslatorWrapper extends Service {
 			//Cursor people = getContentResolver().query(People.CONTENT_URI, new String[] { People.NAME, People.NUMBER }, null, null, null);
 			
 			c = getContentResolver().query(Uri.parse("content://sms/inbox"), new String[] { "date", "person", "subject", "body", "address" }, "date > " + last_updated, null, null);
-			if (c == null) System.out.println(db_key + " SMS uri returned null cursor; check the URI");
+			if (c == null) Log.d("KnowledgeTranslatorWrapper",db_key + " SMS uri returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
-					System.out.println("SMS query returns empty cursor.");
+					Log.d("KnowledgeTranslatorWrapper", "SMS query returns empty cursor.");
 				}
 			}
 			if (c != null && c.getCount() > 0) {
@@ -320,10 +321,10 @@ public class KnowledgeTranslatorWrapper extends Service {
 			if (c != null) c.close();
 			
 			c = getContentResolver().query(Uri.parse("content://sms/sent"), new String[] { "date", "person", "subject", "body", "address" }, "date > " + last_updated, null, null);
-			if (c == null) System.out.println(db_key + " SMS sent uri returned null cursor; check the URI");
+			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " SMS sent uri returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
-					System.out.println("SMS sent query returns empty cursor.");
+					Log.d("KnowledgeTranslatorWrapper", "SMS sent query returns empty cursor.");
 				}
 			}
 			if (c != null && c.getCount() > 0) {
@@ -416,16 +417,16 @@ public class KnowledgeTranslatorWrapper extends Service {
 				long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
 				last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
 			} else {
-				System.out.println("Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
+				Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
 			}
 			update_c.close();
 			
 			Cursor c = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, new String[] { MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns.TITLE, MediaStore.MediaColumns.DATE_ADDED, MediaStore.Audio.AudioColumns.ARTIST}, MediaStore.MediaColumns.DATE_ADDED + " > " + last_updated, null, null);
 			//need to change this to know when user last accessed, not added
-			if (c == null) System.out.println(db_key + " returned null cursor; check the URI");
+			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
-					System.out.println("MediaAudio query returns empty cursor.");
+					Log.d("KnowledgeTranslatorWrapper", "MediaAudio query returns empty cursor.");
 				}
 			}
 			if (c != null && c.getCount() > 0) {
@@ -438,10 +439,10 @@ public class KnowledgeTranslatorWrapper extends Service {
 			if (c != null) c.close();
 			
 			c = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new String[] { MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns.TITLE, MediaStore.MediaColumns.DATE_ADDED, MediaStore.Images.ImageColumns.DESCRIPTION, MediaStore.Images.ImageColumns.LATITUDE, MediaStore.Images.ImageColumns.LONGITUDE  }, MediaStore.MediaColumns.DATE_ADDED + " > " + last_updated, null, null);
-			if (c == null) System.out.println(db_key + " returned null cursor for images; check the URI");
+			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " returned null cursor for images; check the URI");
 			else {
 				if (c.getCount() == 0) {
-					System.out.println("MediaImages query returns empty cursor.");
+					Log.d("KnowledgeTranslatorWrapper", "MediaImages query returns empty cursor.");
 				}
 			}
 			if (c != null && c.getCount() > 0) {
@@ -480,15 +481,15 @@ public class KnowledgeTranslatorWrapper extends Service {
 				long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
 				last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
 			} else {
-				System.out.println("Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
+				Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
 			}
 			update_c.close();
 			
 			Cursor c = getContentResolver().query(Browser.SEARCHES_URI, Browser.SEARCHES_PROJECTION, "date > " + last_updated, null, null);
-			if (c == null) System.out.println(db_key + " BROWSER.SEARCHES_URI returned null cursor; check the URI");
+			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " BROWSER.SEARCHES_URI returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
-					System.out.println("InternetBrowsing Searches query returns empty cursor.");
+					Log.d("KnowledgeTranslatorWrapper", "InternetBrowsing Searches query returns empty cursor.");
 				}
 			}
 			if (c != null && c.getCount() > 0) {
@@ -533,10 +534,10 @@ public class KnowledgeTranslatorWrapper extends Service {
 			 * user_entered => ?
 			 */
 			c = getContentResolver().query(Browser.BOOKMARKS_URI, Browser.HISTORY_PROJECTION, "date > " + last_updated, null, null);
-			if (c == null) System.out.println(db_key + " BOOKMARKS_URI returned null cursor; check the URI");
+			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " BOOKMARKS_URI returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
-					System.out.println("Browser Bookmarks query returns empty cursor.");
+					Log.d("KnowledgeTranslatorWrapper", "Browser Bookmarks query returns empty cursor.");
 				}
 			}
 			if (c != null && c.getCount() > 0) {
@@ -628,7 +629,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 				long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
 				last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
 			} else {
-				System.out.println("Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
+				Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
 			}
 			update_c.close();
 			
@@ -694,7 +695,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 			cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
 			getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 			//add application. for now, can't find subclass from market api
-			System.out.println("Adding fact for " + applicationName);
+			Log.d("KnowledgeTranslatorWrapper", "Adding fact for " + applicationName);
 			cv = new ContentValues();
 			cv.put("tag_class", "Application");
 			cv.put("subclass", "General-Use");
@@ -722,7 +723,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 					//add application. for now, can't find subclass from market api
 					String[] composite = apps.get(i).processName.split("\\.");
-					System.out.println("Adding fact for " + composite[composite.length-1]);
+					Log.d("KnowledgeTranslatorWrapper", "Adding fact for " + composite[composite.length-1]);
 					cv = new ContentValues();
 					cv.put("tag_class", "Application");
 					cv.put("subclass", "General-Use");
@@ -798,8 +799,8 @@ public class KnowledgeTranslatorWrapper extends Service {
 					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 				} else {
 					//Toast.makeText(getApplicationContext(), "Last location time: " + l.getTime(), Toast.LENGTH_LONG).show();
-					System.out.println("Last location time: " + DateFormat.format("yyyy-MM-dd kk:mm:ss",l.getTime()));
-					System.out.println("Last known location accuracy: " + l.getAccuracy());
+					Log.d("KnowledgeTranslatorWrapper", "Last location time: " + DateFormat.format("yyyy-MM-dd kk:mm:ss",l.getTime()));
+					Log.d("KnowledgeTranslatorWrapper", "Last known location accuracy: " + l.getAccuracy());
 				}
 			}
 			reset_update_time(db_key);

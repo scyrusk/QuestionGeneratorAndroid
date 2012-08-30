@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -14,6 +15,15 @@ import android.util.Log;
 
 public class UploaderService extends Service {
 	private WakeLock mWakeLock;
+	public static final String BROADCAST_ACTION = "com.cmuchimps.myauth.uploadupdate";
+	private ServerCommunicator mSC;
+	private Intent mIntent;
+	
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		mIntent = new Intent(BROADCAST_ACTION);
+	}
 	@Override
 	public IBinder onBind(Intent intent) {
 		// TODO Auto-generated method stub
@@ -27,12 +37,11 @@ public class UploaderService extends Service {
 		PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "UploaderServiceWakeLock");
         mWakeLock.acquire();
-        ServerCommunicator sc = new ServerCommunicator(getApplicationContext());
+        mSC = new ServerCommunicator(getApplicationContext());
         
-        if (sc.hasQueuedPackets() && cm.getActiveNetworkInfo().isConnectedOrConnecting()) {
-        	(new UploaderTask()).execute(sc);
+        if (mSC.hasQueuedPackets() && cm.getActiveNetworkInfo().isConnectedOrConnecting()) {
+        	(new UploaderTask()).execute(mSC);
         } else {
-        	System.out.println("No connectivity...can't do anything.");
         	stopSelf();
         }
 
@@ -47,7 +56,7 @@ public class UploaderService extends Service {
 				params[0].sendQueuedPackets();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				System.out.println("Exception in background uploader task");
+				Log.d("UploaderService", "Exception in background uploader task");
 				e.printStackTrace();
 			}
 			return null;
@@ -55,6 +64,7 @@ public class UploaderService extends Service {
         
         @Override
         protected void onPostExecute(Void result) {
+        	sendBroadcast(mIntent);
         	stopSelf();
         }
 	}

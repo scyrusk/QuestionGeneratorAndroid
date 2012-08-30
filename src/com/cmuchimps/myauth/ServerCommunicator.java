@@ -106,6 +106,15 @@ public class ServerCommunicator {
 		}
 	}
 	
+	public void updateQueue() {
+		try {
+			populateQueue();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			return;
+		}
+	}
+	
 	public boolean hasQueuedPackets() {
 		if (mPopQueue) {
 			try {
@@ -142,11 +151,10 @@ public class ServerCommunicator {
 			}
 			mPopQueue = false;
 		}
-		System.out.println("Queued Packets (" + mQueue.size() + ")");
+		
 		for (TransmittablePacket tp : mQueue) {
-			System.out.println(tp);
+			Log.d("ServerCommunicator",tp.toString());
 		}
-		System.out.println("----");
 	}
 	
 	public void queuePacket(TransmittablePacket toQueue) throws IOException {
@@ -183,6 +191,7 @@ public class ServerCommunicator {
 			}
 		}
 		
+		Log.d("ServerCommunicator","Num packets accepted by server:" + toDestroy.size());
 		//destroy successfully transmitted packets
 		for (TransmittablePacket dest : toDestroy) {
 			mQueue.remove(dest);
@@ -203,9 +212,8 @@ public class ServerCommunicator {
 			HttpResponse response=client.execute(postReq);
 		    String resp = UtilityFuncs.convertStreamToString(new BufferedReader(new InputStreamReader(response.getEntity().getContent())));
 		    Log.d("ServerCommunicator","Response received is: ");
-		    System.out.println(resp);
+		    Log.d("ServerCommunicator",resp);
 		    if (resp.equalsIgnoreCase(OK_RESP)) { //data secured on server
-		    	mQueue.remove(toSend);
 		    	return "OK";
 		    } else if (resp.equalsIgnoreCase(SEND_USER_RESP)) {
 		    	return sendUserPacket();
