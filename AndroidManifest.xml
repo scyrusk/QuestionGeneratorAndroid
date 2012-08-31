@@ -35,11 +35,10 @@
     
     
     
-    
-    
     <application
         android:icon="@drawable/authentication"
         android:label="@string/app_name" >
+        <uses-library android:name="com.google.android.maps" />
         <activity
             android:name=".MyAuthActivity"
             android:label="@string/app_name" >
@@ -56,6 +55,9 @@
         <activity
             android:name=".ConsentFormActivity"
             android:label="@string/consent_activity_name" >
+        </activity>
+        <activity android:name=".LocationSelectorActivity"
+            android:label="@string/location_selector_activity_name">
         </activity>
         <service
         	android:name=".KnowledgeTranslatorWrapper"></service>

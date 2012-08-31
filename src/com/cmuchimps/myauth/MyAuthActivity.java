@@ -15,12 +15,14 @@ import java.util.List;
 import java.util.Random;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -109,6 +111,7 @@ public class MyAuthActivity extends Activity {
 	
 	private final int CONSENT_RESULT = 0;
 	private final int NEW_USER_RESULT = 1;
+	private final int LOCATION_SELECTOR_RESULT = 2;
 	
 	private boolean mConsentRequested;
 	private final String INSTRUCTIONS = 
@@ -308,7 +311,6 @@ public class MyAuthActivity extends Activity {
     		
     		questionStartTime = System.currentTimeMillis();
     		registerReceiver(packetUpdateReceiver, new IntentFilter(UploaderService.BROADCAST_ACTION));
-    		printFacts(mDbHelper.getAllFacts());
     		
         	/* Initialize location manager */
         	if (lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -534,9 +536,10 @@ public class MyAuthActivity extends Activity {
 	        		}
 	        		c.close();
 	        	} else if (currQ.getAutoCompl().equalsIgnoreCase("apps")) {
+	        		Log.d("MyAuthActivity", "Asking question about apps");
 	        		PackageManager pm = this.getPackageManager();
 	        		List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
-	        		for (ApplicationInfo pi : packages) autoents.add(pi.packageName);
+	        		for (ApplicationInfo pi : packages) autoents.add(pm.getApplicationLabel(pi).toString());
 	        	}
 	        	
 	        	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
@@ -606,11 +609,12 @@ public class MyAuthActivity extends Activity {
     	cal.add(Calendar.HOUR_OF_DAY,20);
     	cal.add(Calendar.MINUTE,0);
     	cal.add(Calendar.SECOND, 0);
+    	cal.add(Calendar.MILLISECOND, 0);
     	Log.d("MyAuthActivity","Setting alarm for " + cal.getTimeInMillis());
     	PendingIntent recurringNotification = PendingIntent.getBroadcast(getApplicationContext(), 0, 
     			notifier, PendingIntent.FLAG_UPDATE_CURRENT);
     	AlarmManager alarms = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-    	alarms.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), 
+    	alarms.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 3*UtilityFuncs.HOUR_TO_MILLIS, 
     			AlarmManager.INTERVAL_HALF_DAY, recurringNotification);
     }
     
@@ -703,7 +707,8 @@ public class MyAuthActivity extends Activity {
         		this.forcePollSubscriptions();
         		return true;
         	case (R.id.delete):
-        		this.showDialog(DIALOG_DELETE_DB);
+        		//this.showDialog(DIALOG_DELETE_DB);
+        		startActivityForResult(new Intent(this, LocationSelectorActivity.class), LOCATION_SELECTOR_RESULT);
         		return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -731,6 +736,12 @@ public class MyAuthActivity extends Activity {
         	} else {
         		//queue up consent for transmission
         	}
+        } else if (requestCode == LOCATION_SELECTOR_RESULT) {
+        	double lat = (Double) data.getExtras().get("latitude");
+        	double lng = (Double) data.getExtras().get("longitude");
+        	String toPrint = lat + "," + lng;
+        	System.out.println(toPrint);
+        	Toast.makeText(getApplicationContext(), toPrint, Toast.LENGTH_SHORT).show();
         }
     }
     

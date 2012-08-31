@@ -4,6 +4,7 @@
     <string name="app_name">MyAuth</string>
     <string name="user_activity_name">New User Form</string>
     <string name="consent_activity_name">Consent Form</string>
+    <string name="location_selector_activity_name">Pick a Location</string>
     <string name="placeholder">We could not create a question at this time. Hit \'Skip Question\' to try again.</string>
     
     <string name="user_form_prompt">Thanks for participating in this study! First, please fill out the following form:</string>
