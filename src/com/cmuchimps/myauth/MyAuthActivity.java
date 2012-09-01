@@ -87,11 +87,13 @@ public class MyAuthActivity extends Activity {
 	AutoCompleteTextView input;
 	Button submit;
 	Button skip;
+	Button mapsButton;
 	RadioGroup radioSupp1;
 	RadioGroup radioSupp2;
 	RadioGroup radioSupp3;
 	
 	//state fields
+	private boolean askOnStart = true;
 	private int mSuppResponse1;
 	private int mSuppResponse2;
 	private int mSuppResponse3;
@@ -138,6 +140,7 @@ public class MyAuthActivity extends Activity {
         question_prompt = (TextView)this.findViewById(R.id.question_prompt);
         submit = (Button)this.findViewById(R.id.question_submit);
         skip = (Button)this.findViewById(R.id.question_skip);
+        mapsButton = (Button)this.findViewById(R.id.mapsButton);
         radioSupp1 = (RadioGroup)this.findViewById(R.id.radioSupp1);
         radioSupp2 = (RadioGroup)this.findViewById(R.id.radioSupp2);
         radioSupp3 = (RadioGroup)this.findViewById(R.id.radioSupp3);
@@ -156,7 +159,6 @@ public class MyAuthActivity extends Activity {
 				if (currQ != null) {
 					prevQ = currQ;
 					resetFields();
-					askQuestion();
 					showDialog(DIALOG_SKIP_PICKER);
 				} else { //because ordering matters above
 					resetFields();
@@ -238,6 +240,21 @@ public class MyAuthActivity extends Activity {
 		    		exitOnDialogClose = false;
 					showDialog(DIALOG_SEND_IN_BG_ON_EXIT);
 		    	}
+			}
+        });
+        
+        mapsButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				if (cm.getActiveNetworkInfo().isConnectedOrConnecting()) {
+					startActivityForResult(new Intent(getApplicationContext(), LocationSelectorActivity.class),
+						LOCATION_SELECTOR_RESULT);
+				} else {
+					Toast.makeText(getApplicationContext(), 
+							"Sorry, it looks you don't have internet access right now. Enter the name of the location into the text field instead", 
+							Toast.LENGTH_SHORT).show();
+				}
 			}
         });
         
@@ -359,7 +376,11 @@ public class MyAuthActivity extends Activity {
     		}
     		
     		send_to_server_message.setText((mCommunicator.hasQueuedPackets()) ? "You have responses to send to the server (?)." : "");
-    		askQuestion();
+    		System.out.println("asking new question");
+    		if (askOnStart) {
+    			askOnStart = false;
+    			askQuestion();
+    		}
     		Notification note = new Notification(R.drawable.ic_launcher, "A new notification", System.currentTimeMillis());
     		note.flags |= Notification.FLAG_AUTO_CANCEL;
     		note.number += 1;
@@ -545,6 +566,22 @@ public class MyAuthActivity extends Activity {
 	        	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
 	            		android.R.layout.simple_dropdown_item_1line, autoents.toArray(new String[autoents.size()]));
 	        	input.setAdapter(adapter);
+	        }
+	        if (currQ.getMapView()) {
+	        	mapsButton.setEnabled(true);
+	        	if (cm.getActiveNetworkInfo().isConnectedOrConnecting()) {
+	        		input.setEnabled(false);
+	        		input.setHint("Click the map button to answer...");
+	        		mapsButton.requestFocus();
+	        	} else 
+	        		input.setHint("Enter Answer...");
+	        	input.setText("");
+	        } else {
+	        	mapsButton.setEnabled(false);
+	        	input.setEnabled(true);
+	        	input.setHint("Enter Answer...");
+	        	input.setText("");
+	        	input.requestFocus();
 	        }
 	        questionStartTime = System.currentTimeMillis();
         } else {
@@ -740,6 +777,7 @@ public class MyAuthActivity extends Activity {
         	double lat = (Double) data.getExtras().get("latitude");
         	double lng = (Double) data.getExtras().get("longitude");
         	String toPrint = lat + "," + lng;
+        	input.setText(toPrint);
         	System.out.println(toPrint);
         	Toast.makeText(getApplicationContext(), toPrint, Toast.LENGTH_SHORT).show();
         }
@@ -794,6 +832,7 @@ public class MyAuthActivity extends Activity {
 						} else {
 							queueSkipQuestionPacket("");
 							dialog.dismiss();
+							askQuestion();
 						}
 					}
 				})
@@ -808,12 +847,14 @@ public class MyAuthActivity extends Activity {
                     public void onClick(DialogInterface dialog, int whichButton) {
                     	final EditText explanationEditText = (EditText)explanationDialogView.findViewById(R.id.explanationEntry);
                     	queueSkipQuestionPacket(explanationEditText.getText().toString());
+    					askQuestion();
                         dialog.dismiss();
                     }
                 })
                 .setNegativeButton("Skip", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                     	queueSkipQuestionPacket("");
+    					askQuestion();
                         dialog.dismiss();
                     }
                 });

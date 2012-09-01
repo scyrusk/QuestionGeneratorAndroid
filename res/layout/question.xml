@@ -18,17 +18,31 @@
 		        android:gravity="center_vertical"
 		        android:paddingLeft="5dp"
 		        android:text="@string/placeholder" />
-		
-		    <AutoCompleteTextView
-		        android:id="@+id/user_answer"
+			
+		    <LinearLayout
 		        android:layout_width="match_parent"
 		        android:layout_height="wrap_content"
-		        android:ems="10"
-		        android:gravity="left|center_vertical" >
-		
-		        <requestFocus />
-		    </AutoCompleteTextView>
-		    
+		        android:orientation="horizontal">
+			    <AutoCompleteTextView
+			        android:id="@+id/user_answer"
+			        android:layout_width="0px"
+			        android:layout_height="wrap_content"
+			        android:ems="10"
+			        android:gravity="left|center_vertical"
+			        android:layout_weight="3">
+					
+			        <requestFocus />
+			    </AutoCompleteTextView>
+		    	
+			    <Button
+			        android:id="@+id/mapsButton"
+			        android:layout_width="0px"
+			        android:layout_height="45dp"
+			        android:background="@drawable/google_maps_icon"
+			        android:enabled="false" 
+			        android:layout_weight="0.5"/>
+
+		    </LinearLayout>
 		    <TextView
 		        android:id="@+id/q_instructions"
 		        android:layout_width="fill_parent"

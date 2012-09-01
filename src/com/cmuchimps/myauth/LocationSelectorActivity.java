@@ -84,6 +84,8 @@ public class LocationSelectorActivity extends MapActivity {
 		}
 		point = new GeoPoint((int) (currLoc.getLatitude() * 1E6),
 						 (int) (currLoc.getLongitude() * 1E6));
+		selectedLat = currLoc.getLatitude();
+		selectedLong = currLoc.getLongitude();
 		
 		mapController.animateTo(point);
 		

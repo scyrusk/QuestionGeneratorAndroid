@@ -162,7 +162,7 @@ public class QuestionGenerator {
 		for (Long l : temp) { facts.add(l); }
 		System.out.println("Different types of facts:" + factCompression.size());
 		System.out.println("Number of qualifying facts: " + facts.size());
-		while (facts.size() > 0) {
+		while (facts.size() > 0 && factCompression.size() > 0) {
 			int index = MyAuthActivity.r.nextInt(factCompression.size());
 			Fact fc_key = factCompression.keySet().toArray(new Fact[factCompression.size()])[index];
 			ArrayList<Long> simFactStructures = factCompression.get(fc_key);
@@ -184,7 +184,10 @@ public class QuestionGenerator {
 	        }
 			if (fqats.size() == 0) { //no matches
 				// System.out.println("couldn't find askable fact");
-				facts.remove(index);
+				facts.remove(fact);
+				simFactStructures.remove(index);
+	        	if (simFactStructures.size() <= 0)
+	        		factCompression.remove(fc_key);
 				continue;
 			} else {
 				//generate question answer pair
