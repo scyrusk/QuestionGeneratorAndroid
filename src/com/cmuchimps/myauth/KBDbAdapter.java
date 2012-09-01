@@ -170,14 +170,19 @@ public class KBDbAdapter {
     	Cursor c = mDb.query(TAG_CLASS_TABLE, new String[] {KEY_ROWID, "name"}, "name='"+name+"'", null, null, null, null);
     	if (c.getCount() > 0) {
     		c.moveToFirst();
-    		return c.getLong(c.getColumnIndex(KEY_ROWID));
+    		Long retVal = c.getLong(c.getColumnIndex(KEY_ROWID));
+    		c.close();
+    		return retVal;
     	}
+    	c.close();
     	return -1;
     }
     
     public long returnTagNumbers(String name) {
     	Cursor c = mDb.query(TAG_CLASS_TABLE, new String[] {KEY_ROWID, "name"}, "name='"+name+"'", null, null, null, null);
-    	return c.getCount();
+    	int retVal = c.getCount();
+    	c.close();
+    	return retVal;
     }
     
     /**
@@ -231,8 +236,10 @@ public class KBDbAdapter {
     	if (c.getCount() > 0) {
     		c.moveToFirst();
     		String compVal = c.getString(c.getColumnIndex("queried"));
+    		c.close();
     		return (compVal != null && compVal.equalsIgnoreCase("true"));
     	}
+    	c.close();
     	return false;
     }
     
@@ -247,6 +254,7 @@ public class KBDbAdapter {
     			c.moveToNext();
     		}
     	}
+    	c.close();
     	return retVal.toArray(new Long[retVal.size()]);
     }
     
@@ -546,6 +554,7 @@ public class KBDbAdapter {
     		subs.put(c.getString(c.getColumnIndex("subskey")),c.getString(c.getColumnIndex("class_name")));
     		c.moveToNext();
     	}
+    	c.close();
     	return subs;
     }
     
@@ -555,8 +564,13 @@ public class KBDbAdapter {
     
     public String getSubscriptionClassFor(String subskey) {
     	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "class_name" }, "subskey='" + subskey + "'", null, null, null, null);
-    	if (c.getCount() == 0) return "";
-    	return c.getString(c.getColumnIndex("class_name"));
+    	if (c.getCount() == 0) {
+    		c.close();
+    		return "";
+    	}
+    	String retVal = c.getString(c.getColumnIndex("class_name"));
+    	c.close();
+    	return retVal;
     }
     
     public int updateSubscriptionTime(String subskey,long last_update) {
@@ -573,6 +587,7 @@ public class KBDbAdapter {
     		subs.put(c.getString(c.getColumnIndex("subskey")),c.getString(c.getColumnIndex("class_name")));
     		c.moveToNext();
     	}
+    	c.close();
     	return subs;
     }
     
@@ -580,8 +595,11 @@ public class KBDbAdapter {
     	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "last_update", "poll_interval" }, "subskey = '" + subskey + "'", null, null, null, null);
     	if (c.getCount() > 0) {
     		c.moveToFirst();
-    		return c.getLong(c.getColumnIndex("last_update")) + c.getLong(c.getColumnIndex("poll_interval"));
+    		long retVal = c.getLong(c.getColumnIndex("last_update")) + c.getLong(c.getColumnIndex("poll_interval"));
+    		c.close();
+    		return retVal;
     	} else {
+    		c.close();
     		return -1l;
     	}
     }
@@ -609,26 +627,40 @@ public class KBDbAdapter {
     	String tc, subclass, subvalue=null;
     	HashMap<String,String> retVal = new HashMap<String,String>();
     	Cursor c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "tag_classid", "subclass", "subvalue"}, KEY_ROWID+"="+row_id, null, null, null, null);
-    	if (c.getCount() == 0) return dw.new Tag(-1, "","","");
+    	if (c.getCount() == 0) {
+    		c.close();
+    		return dw.new Tag(-1, "","","");
+    	}
     	c.moveToFirst();
     	tc = this.getTagClass(c.getLong(c.getColumnIndex("tag_classid")));
     	subclass = c.getString(c.getColumnIndex("subclass"));
     	if (!c.isNull(c.getColumnIndex("subvalue"))) subvalue = c.getString(c.getColumnIndex("subvalue"));
+    	c.close();
     	return dw.new Tag(row_id, tc, subclass, subvalue);
     }
     
     public String getDescription(long row_id) {
     	Cursor c = mDb.query(DESCRIPTIONS_TABLE, new String[] { KEY_ROWID, "description" }, KEY_ROWID+"="+row_id, null, null, null, null);
-    	if (c.getCount() == 0) return "";
+    	if (c.getCount() == 0) {
+    		c.close();
+    		return "";
+    	}
     	c.moveToFirst();
-    	return c.getString(c.getColumnIndex("description"));
+    	String retVal = c.getString(c.getColumnIndex("description"));
+    	c.close();
+    	return retVal;
     }
     
     public String getTagClass(long row_id) {
     	Cursor c = mDb.query(TAG_CLASS_TABLE, new String[] { KEY_ROWID, "name"}, KEY_ROWID + "=" + row_id, null, null, null, null);
-    	if (c.getCount() == 0) return "";
+    	if (c.getCount() == 0) {
+    		c.close();
+    		return "";
+    	}
     	c.moveToFirst();
-    	return c.getString(c.getColumnIndex("name"));
+    	String retVal = c.getString(c.getColumnIndex("name"));
+    	c.close();
+    	return retVal;
     }
     
     public Meta getMeta(long row_id) {
@@ -637,6 +669,7 @@ public class KBDbAdapter {
     	c.moveToFirst();
     	name = c.getString(c.getColumnIndex("name"));
     	if (!c.isNull(c.getColumnIndex("value"))) value = c.getString(c.getColumnIndex("value"));
+    	c.close();
     	return dw.new Meta(row_id, name, value);
     }
     
@@ -648,10 +681,12 @@ public class KBDbAdapter {
 	    	di = this.getIndicesFromCursor(c);
     	}
     	//get tags
+    	c.close();
     	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "acondsid"}, "acondsid="+row_id, null, null, null, null);
     	if (c.getCount() > 0) {
     		ti = this.getIndicesFromCursor(c);
     	}
+    	c.close();
     	return dw.new Acond(row_id, di, ti);
     }
     
@@ -665,10 +700,12 @@ public class KBDbAdapter {
     		refNum = c.getInt(c.getColumnIndex("refnum"));
     	}
     	//get tags
+    	c.close();
     	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "qcondsid"}, "qcondsid="+row_id, null, null, null, null);
     	if (c.getCount() > 0) {
     		ti = this.getIndicesFromCursor(c);
     	}
+    	c.close();
     	return (refNum == -1 && ti.length == 0 ? dw.new Qcond(row_id) : dw.new Qcond(row_id, refNum, ti));
     }
     
@@ -677,22 +714,28 @@ public class KBDbAdapter {
     	Long[] mi = new Long[0], ti = new Long[0];
     	
     	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "timestamp", "dayOfWeek", "queried"}, KEY_ROWID+"="+row_id, null, null, null, null);
-    	if (c.getCount() <= 0) return dw.new Fact();
+    	if (c.getCount() <= 0) {
+    		c.close();
+    		return dw.new Fact();
+    	}
     	//get timestamp
     	c.moveToFirst();
     	timestamp = c.getString(c.getColumnIndex("timestamp"));
     	dayOfWeek = c.getString(c.getColumnIndex("dayOfWeek"));
     	queried = c.getString(c.getColumnIndex("queried"));
     	//get tags
+    	c.close();
     	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "factsid"}, "factsid="+row_id, null, null, null, null);
     	if (c.getCount() > 0) {
     		ti = this.getIndicesFromCursor(c);
     	}
     	//get metas
+    	c.close();
     	c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "factsid"}, "factsid="+row_id, null, null, null, null);
     	if (c.getCount() > 0) {
     		mi = this.getIndicesFromCursor(c);
     	}
+    	c.close();
     	return dw.new Fact(row_id, timestamp, dayOfWeek, mi, ti, queried);
     }
     
@@ -702,38 +745,55 @@ public class KBDbAdapter {
     	Long[] qi = new Long[0], mi = new Long[0];
     	
     	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID, "qtext"}, KEY_ROWID + "=" + row_id, null,null,null,null,null);
-    	if (c.getCount() <= 0) return dw.new QAT();
+    	if (c.getCount() <= 0) {
+    		c.close();
+    		return dw.new QAT();
+    	}
     	c.moveToFirst();
     	qtext = c.getString(c.getColumnIndex("qtext"));
     	//get acond
+    	c.close();
     	c = mDb.query(ACOND_TABLE, new String[] {KEY_ROWID, "qatid"}, "qatid="+row_id, null, null, null, null);
     	if (c.getCount() > 0) {
     		c.moveToFirst();
     		acond_id = c.getLong(c.getColumnIndex("qatid"));
     	}
     	//get qconds
+    	c.close();
     	c = mDb.query(QCOND_TABLE, new String[] { KEY_ROWID, "qatid"}, "qatid="+row_id, null, null, null, null);
     	if (c.getCount() > 0) {
     		qi = this.getIndicesFromCursor(c);
     	}
     	//get metas
+    	c.close();
     	c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "qatid"}, "qatid="+row_id, null, null, null, null);
     	if (c.getCount() > 0) {
     		mi = this.getIndicesFromCursor(c);
     	}
+    	c.close();
     	return dw.new QAT(row_id, qtext, acond_id, qi, mi);
     }
     
     public Long[] getAllQATs() {
     	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
-    	if (c.getCount() <= 0) return new Long[0];
-    	return this.getIndicesFromCursor(c);
+    	if (c.getCount() <= 0) {
+    		c.close();
+    		return new Long[0];
+    	}
+    	Long[] retVal = this.getIndicesFromCursor(c);
+    	c.close();
+    	return retVal;
     }
     
     public Long[] getAllFacts() {
     	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
-    	if (c.getCount() <= 0) return new Long[0];
-    	return this.getIndicesFromCursor(c);
+    	if (c.getCount() <= 0) {
+    		c.close();
+    		return new Long[0];
+    	}
+    	Long[] retVal = this.getIndicesFromCursor(c);
+    	c.close();
+    	return retVal;
     }
     
     /**
@@ -807,6 +867,7 @@ public class KBDbAdapter {
     	c.moveToFirst();
     	retVal.put("qtext", c.getString(c.getColumnIndex("qtext")));
     	//get Acond
+    	c.close();
     	c = mDb.query(ACOND_TABLE, new String[] { KEY_ROWID, "qatid"}, "qatid="+qat_id, null, null, null, null);
     	if (c.getCount() != 1) {
     		System.out.print("QAT with id " + qat_id + " has " + c.getCount() + " Aconds associated with it, with ids: ");
@@ -835,9 +896,11 @@ public class KBDbAdapter {
 			if (!tcursor.isNull(tcursor.getColumnIndex("subvalue"))) tag.put("subvalue", tcursor.getString(tcursor.getColumnIndex("subvalue")));
 			tags.add(tag);
 			tcursor.moveToNext();
+			sub.close();
     	}
     	acond.put("tags", tags);
     	//get descriptions
+    	tcursor.close();
     	tcursor = mDb.query(DESCRIPTIONS_TABLE, new String[] {KEY_ROWID,"description","acondsid"}, "acondsid="+c.getLong(c.getColumnIndex(KEY_ROWID)), null, null, null, null);
     	ArrayList<String> descs = new ArrayList<String>();
     	tcursor.moveToFirst();
@@ -845,9 +908,11 @@ public class KBDbAdapter {
     		descs.add(tcursor.getString(tcursor.getColumnIndex("description")));
     		tcursor.moveToNext();
     	}
+    	tcursor.close();
     	acond.put("descriptions", descs);
     	retVal.put("acond", acond);
     	//get Qconds
+    	c.close();
     	c = mDb.query(QCOND_TABLE, new String[] { KEY_ROWID, "refnum", "qatid"}, "qatid="+qat_id, null, null, null, null);
     	ArrayList<HashMap<String,Object>> qconds = new ArrayList<HashMap<String,Object>>();
     	c.moveToFirst();
@@ -870,12 +935,14 @@ public class KBDbAdapter {
     			qtags.add(tag);
     			tcursor.moveToNext();
         	}
+        	tcursor.close();
         	qcond.put("tags", qtags);
         	qconds.add(qcond);
         	c.moveToNext();
     	}
     	retVal.put("qconds", qconds);
     	//get MetaInfo
+    	c.close();
     	c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "name", "value", "qatid" }, "qatid"+"="+qat_id, null, null, null, null);
     	ArrayList<HashMap<String,String>> metas = new ArrayList<HashMap<String,String>>();
 		c.moveToFirst();
@@ -888,6 +955,7 @@ public class KBDbAdapter {
 		}
 		Log.d("KBDbAdapter", "Exiting getQat");
 		retVal.put("metas", metas);
+		c.close();
     	return retVal;
     }
     
@@ -920,8 +988,13 @@ public class KBDbAdapter {
      */
     public Long[] getFilteredFacts(String[] columns, String selection, String[] selectionArgs) {
     	Cursor c = mDb.query(FACTS_TABLE, columns, selection, selectionArgs, null, null, null);
-    	if (c.getCount() <= 0) return new Long[0];
-    	return this.getIndicesFromCursor(c);
+    	if (c.getCount() <= 0) {
+    		c.close();
+    		return new Long[0];
+    	}
+    	Long[] retVal = this.getIndicesFromCursor(c);
+    	c.close();
+    	return retVal;
     }
     
     /**
@@ -982,7 +1055,9 @@ public class KBDbAdapter {
     	query.append(");");
     	Log.d("KBDbAdapter", query.toString());
     	Cursor c = mDb.rawQuery(query.toString(), null);
-    	return this.getIndicesFromCursor(c);
+    	Long[] retVal = this.getIndicesFromCursor(c);
+    	c.close();
+    	return retVal;
     }
     
     /**
@@ -1039,8 +1114,10 @@ public class KBDbAdapter {
     	}
     	query.append(");");
     	Log.d("KBDbAdapter", query.toString());
+    	c.close();
     	c = mDb.rawQuery(query.toString(), null);
     	Long[] aconds_matches = this.getIndicesFromCursor(c);
+    	c.close();
     	return UtilityFuncs.getUnion(qconds_matches, aconds_matches);
     }
     
@@ -1059,7 +1136,9 @@ public class KBDbAdapter {
     	query.append(");");
     	Log.d("KBDbAdapter", query.toString());
     	Cursor c = mDb.rawQuery(query.toString(), null);
-    	return this.getIndicesFromCursor(c);
+    	Long[] retVal = this.getIndicesFromCursor(c);
+    	c.close();
+    	return retVal;
     }
     
     /**
