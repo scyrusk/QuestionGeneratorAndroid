@@ -151,7 +151,7 @@
   </tns:QAT>
   
   <tns:QAT>
-	  <tns:QText>What website did you visit on (time:dow , date , around hod)?</tns:QText>
+	  <tns:QText>What website did you visit on (time:dow , date , around hod)? [format your answer as a url-google.com]</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
