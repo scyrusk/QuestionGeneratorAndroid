@@ -20,9 +20,16 @@
 		        android:text="@string/placeholder" />
 			
 		    <LinearLayout
+		        android:id="@+id/input_layout"
 		        android:layout_width="match_parent"
 		        android:layout_height="wrap_content"
 		        android:orientation="horizontal">
+		        
+		        <LinearLayout
+		            android:id="@+id/replacable_input"
+		            android:layout_width="match_parent"
+		            android:layout_height="wrap_content"
+		            android:orientation="horizontal">
 			    <AutoCompleteTextView
 			        android:id="@+id/user_answer"
 			        android:layout_width="0px"
@@ -41,7 +48,7 @@
 			        android:background="@drawable/google_maps_icon"
 			        android:enabled="false" 
 			        android:layout_weight="0.5"/>
-
+				</LinearLayout>
 		    </LinearLayout>
 		    <TextView
 		        android:id="@+id/q_instructions"

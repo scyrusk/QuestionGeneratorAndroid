@@ -1,24 +1,31 @@
 package com.cmuchimps.myauth;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.provider.Browser;
+import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.text.format.DateFormat;
 
 import com.cmuchimps.myauth.DataWrapper.Fact;
 import com.cmuchimps.myauth.DataWrapper.Meta;
 import com.cmuchimps.myauth.DataWrapper.QAT;
 
-import flexjson.JSONDeserializer;
 import flexjson.JSONSerializer;
 
 public class QuestionGenerator {
@@ -53,34 +60,44 @@ public class QuestionGenerator {
 		private HashMap<String,Float> answers;
 		private HashMap<String,String> question_metas; //should contain at least timestamp
 		private ArrayList<HashMap<String,String>> answer_metas;
+		private ArrayList<String> allAnswers;
+		private ArrayList<String> autoComplList;
 		private boolean mapview;
-		private String auto;
+		private boolean auto;
+		private boolean recall;
 		
 		public QuestionAnswerPair() {
-			initialize("", new HashMap<String,Float>(), new HashMap<String,String>(), new ArrayList<HashMap<String,String>>(), false, "none");
+			initialize("", new HashMap<String,Float>(), new HashMap<String,String>(), new ArrayList<HashMap<String,String>>(), false, false, true, new ArrayList<String>(), new ArrayList<String>());
 		}
 		
 		public QuestionAnswerPair(String q, HashMap<String,Float> as, HashMap<String,String> qms, ArrayList<HashMap<String,String>> ams,
-				boolean mv, String au) {
-			initialize(q, as, qms, ams, mv, au);
+				boolean mv, boolean au, boolean rc, ArrayList<String> allAns,
+				ArrayList<String> acl) {
+			initialize(q, as, qms, ams, mv, au, rc, allAns, acl);
 		}
 		
 		public QuestionAnswerPair(String q, ArrayList<String> as, HashMap<String,String> qms, ArrayList<HashMap<String,String>> ams,
-				boolean mv, String au) {
+				boolean mv, boolean au, boolean rc, ArrayList<String> allAns,
+				ArrayList<String> acl) {
 			HashMap<String,Float> acouples = new HashMap<String,Float>();
 			for (String a : as)
 				acouples.put(a, 0.5f);
-			initialize(q,acouples,qms,ams, mv, au);
+			initialize(q,acouples,qms,ams, mv, au, rc, allAns, acl);
 		}
 		
 		private void initialize(String q, HashMap<String,Float> as,HashMap<String,String> qms,ArrayList<HashMap<String,String>> ams,
-				boolean mv, String au) {
+				boolean mv, boolean au, boolean rc, ArrayList<String> allAns,
+				ArrayList<String> acl) {
 			question = q;
 			answers = as;
 			question_metas = qms;
 			answer_metas = ams;
 			mapview = mv;
 			auto = au;
+			recall = rc;
+			allAnswers = new ArrayList<String>(allAns);
+			autoComplList = new ArrayList<String>(acl);
+			Collections.shuffle(allAnswers);
 		}
 		
 		public Float get(String a) {
@@ -107,8 +124,43 @@ public class QuestionGenerator {
 			return false;
 		}
 		
-		public String getAutoCompl() { return auto; }
+		public boolean isAutoCompl() { return auto; }
 		public boolean getMapView() { return mapview; }
+		public boolean isRecallQ() { return recall; }
+		public ArrayList<String> getAnswerList() { 
+			return new ArrayList<String>(allAnswers); 
+		}
+		
+		public String[] getAnswerListAsArr() {
+			return allAnswers.toArray(new String[allAnswers.size()]);
+		}
+		
+		public ArrayList<String> getAutoComplList() {
+			return new ArrayList<String>(autoComplList);
+		}
+		
+		public String[] getAutoComplListAsArr() {
+			return autoComplList.toArray(new String[autoComplList.size()]);
+		}
+		
+		public String getBestAnswer() {
+			String best = answers.keySet().iterator().next();
+			for (String key : answers.keySet())
+				if (answers.get(key) > answers.get(best))
+					best = key;
+			return best;
+		}
+		
+		public List<String> getNDistractionAnswers(int n) {
+			List<String> distractions = new ArrayList<String>();
+			String bestAnswer = getBestAnswer();
+			int counter = 0;
+			for (String key : answers.keySet()) {
+				if (!key.equalsIgnoreCase(bestAnswer) && counter++ < n)
+					distractions.add(key);
+			}
+			return distractions;
+		}
 	}
 	
 	public QuestionGenerator(KBDbAdapter kbdb, DataWrapper ddub, File filesDir) {
@@ -123,7 +175,7 @@ public class QuestionGenerator {
 		}
 	}
 	
-	public QuestionAnswerPair askQuestion() {
+	public QuestionAnswerPair askQuestion(Context ctx) {
 		/*
 		 * Filter knowledge base facts by the past 24 hours
 		 * Compress all filtered facts into distinct type
@@ -161,6 +213,9 @@ public class QuestionGenerator {
 		//Long[] temp = afacts;
 		for (Long l : temp) { facts.add(l); }
 		System.out.println("Different types of facts:" + factCompression.size());
+		for (Fact f : factCompression.keySet()) {
+			System.out.println(f);
+		}
 		System.out.println("Number of qualifying facts: " + facts.size());
 		while (facts.size() > 0 && factCompression.size() > 0) {
 			int index = MyAuthActivity.r.nextInt(factCompression.size());
@@ -200,7 +255,12 @@ public class QuestionGenerator {
 				//now that we have the QAT and fact tag matches, start filling in the blanks
 				String question = theQAT.getQText();
 				HashMap<String,Float> answers = new HashMap<String,Float>();
-				answers.put(fact.getTagAt(matches[0]).getSV(), 0.5f);
+				String answerType = fact.getTagAt(matches[0]).getTC() + ":" + fact.getTagAt(matches[0]).getSC();
+				String theAnswer = (answerType.equalsIgnoreCase("Internet:Visited-Site-Url") ?
+						UtilityFuncs.getURLHost( fact.getTagAt(matches[0]).getSV()) :
+						fact.getTagAt(matches[0]).getTC());
+				//System.out.println(answerType);
+				answers.put(fact.getTagAt(matches[0]).getSV(), 1.0f);
 				//first check to see if the answer has the "list" or "anysubclass" meta
 				ArrayList<String> acond_descs = new ArrayList<String>();
 				for (String s : theQAT.getAcond().getAllDescriptions()) { acond_descs.add(s); };
@@ -224,10 +284,11 @@ public class QuestionGenerator {
 				
 				//should also check if acond_descs contain mapview or autocompl hints
 				boolean mapViewAnswer = acond_descs.contains("mapview");
-				String autocompl = (acond_descs.contains("autocompl-contacts") ?
-						"contacts" : 
-						(acond_descs.contains("autocompl-apps") ? "apps" : "none"));
-						
+				boolean autocompl = (acond_descs.contains("autocompl"));
+				
+				boolean shouldBeRecogd = MyAuthActivity.r.nextInt(2) == 0;
+				boolean recog = acond_descs.contains("recogable") && shouldBeRecogd;
+
 				//also mark which Acond tag condition has been matched with the answer
 				/*int qat_acond_chosen = -1;
 				for (int i = 0; i < theQAT.getAcond().getAllTags().length; i++) {
@@ -271,24 +332,97 @@ public class QuestionGenerator {
 				
 				ArrayList<HashMap<String,String>> answer_metas = new ArrayList<HashMap<String,String>>();
 				HashMap<String,String> answer_meta = new HashMap<String,String>();
+				ArrayList<String> allAnswers = new ArrayList<String>();
 				long nextAID = getNextID(false);
 				
-				answer_meta.put("aid", ""+nextAID);
-				answer_meta.put("timestamp",fact.getTimestamp());
-				answer_meta.put("value", fact.getTagAt(matches[0]).getSV());
-				answer_meta.put("correct", "yes");
-				answer_metas.add(answer_meta);
-				for (Fact f : simFacts) {
-					nextAID = getNextID(false);
-					answer_meta = new HashMap<String,String>();
+				ArrayList<String> autoents = new ArrayList<String>();
+	        	if (answerType.equalsIgnoreCase("Person:Contact")) {
+	        		Cursor c = ctx.getContentResolver().query(
+	        				ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+	        				new String[] { Phone.DISPLAY_NAME }, null, null, null);
+	        		if (c.getCount() > 0) {
+	        			c.moveToFirst();
+	        			while (!c.isAfterLast()) {
+	        				autoents.add(c.getString(0));
+	        				c.moveToNext();
+	        			}
+	        		}
+	        		c.close();
+	        	} else if (answerType.split(":")[0].equalsIgnoreCase("Application")) {
+	        		PackageManager pm = ctx.getPackageManager();
+	        		List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+	        		for (ApplicationInfo pi : packages) autoents.add(pm.getApplicationLabel(pi).toString());
+	        	} else if (answerType.equalsIgnoreCase("Internet:Visited-Site-Url")) {
+	        		String[] topSites = ctx.getResources().getStringArray(R.array.top_sites);
+	        		for (String ts : topSites) autoents.add(ts);
+	        		autoents.add(theAnswer);
+	        		
+	        		Cursor c = ctx.getContentResolver().query(Browser.BOOKMARKS_URI, Browser.HISTORY_PROJECTION, null, null, null);
+	        		if (c != null && c.getCount() > 0) {
+	        			c.moveToFirst();
+	        			while (!c.isAfterLast())
+	        				autoents.add(UtilityFuncs.getURLHost(c.getString(Browser.HISTORY_PROJECTION_URL_INDEX)));
+	        			c.close();
+	        		}
+	        	}
+	        	
+	        	
+	        	if (recog) {
+	        		ArrayList<String> dupAutoEnts = new ArrayList<String>(autoents);
+	        		int numAnswers = (MyAuthActivity.r.nextInt(10) >= 5 ? 5 : 10);
+	        		allAnswers.add(theAnswer);
+	        		answer_meta.put("aid", ""+nextAID);
+					answer_meta.put("timestamp",fact.getTimestamp());
+					answer_meta.put("value", fact.getTagAt(matches[0]).getSV());
+					answer_meta.put("correct", "yes");
+					answer_metas.add(answer_meta);
+	        		int added = 0;
+	        		for (Fact f : simFacts) {
+	        			if (allAnswers.contains(f.getTagAt(matches[0]).getSV())) 
+	        				continue;
+	        			String tmpAnswer = UtilityFuncs.getURLHost(f.getTagAt(matches[0]).getSV());
+	        			allAnswers.add(tmpAnswer);
+	        			nextAID = getNextID(false);
+						answer_meta = new HashMap<String,String>();
+						answer_meta.put("aid", ""+nextAID);
+						answer_meta.put("timestamp", f.getTimestamp());
+						answer_meta.put("value", tmpAnswer);
+						answer_meta.put("correct", "nearMiss");
+	        			if (++added == (numAnswers-1)/2) break;
+	        		}
+	        		//allAnswers.addAll(currQ.getNDistractionAnswers((numAnswers-1)/2));
+	        		dupAutoEnts.removeAll(allAnswers);
+	        		for (int i = allAnswers.size(); i < numAnswers; i++) {
+	        			if (dupAutoEnts.size() == 0) break;
+	        			int addIndex = MyAuthActivity.r.nextInt(dupAutoEnts.size());
+	        			allAnswers.add(dupAutoEnts.get(addIndex));
+	        			nextAID = getNextID(false);
+						answer_meta = new HashMap<String,String>();
+						answer_meta.put("aid", ""+nextAID);
+						answer_meta.put("value", dupAutoEnts.get(addIndex));
+						answer_meta.put("correct", "random");
+	        			dupAutoEnts.remove(addIndex);
+	        		}
+	        	} else {
 					answer_meta.put("aid", ""+nextAID);
-					answer_meta.put("timestamp", f.getTimestamp());
-					answer_meta.put("value", f.getTagAt(matches[0]).getSV());
-					answer_meta.put("correct", "no");
-				}
-				
+					answer_meta.put("timestamp",fact.getTimestamp());
+					answer_meta.put("value", fact.getTagAt(matches[0]).getSV());
+					answer_meta.put("correct", "yes");
+					answer_metas.add(answer_meta);
+					for (Fact f : simFacts) {
+						nextAID = getNextID(false);
+						answer_meta = new HashMap<String,String>();
+						answer_meta.put("aid", ""+nextAID);
+						answer_meta.put("timestamp", f.getTimestamp());
+						answer_meta.put("value", f.getTagAt(matches[0]).getSV());
+						answer_meta.put("correct", "no");
+						answer_metas.add(answer_meta);
+					}
+		        }
+	        	
 				mDbHelper.registerFactAsQueried(fact.getID());
-				return new QuestionAnswerPair(question,answers,question_metas,answer_metas, mapViewAnswer, autocompl);
+				return new QuestionAnswerPair(question,answers,question_metas,answer_metas, 
+						mapViewAnswer, autocompl, !recog, allAnswers, autoents);
 			}
 		}
 		

@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -150,7 +152,7 @@ public class UtilityFuncs {
 			HashMap<String,String> supp = new HashMap<String,String>();
 			supp.put("How easy was it for you to recall the answer to this question?", "5");
 			supp.put("How confident are you in your answer?", "5");
-			TransmissionPacket temp = new TransmissionPacket(0,"kash","Who what when where how at 11am?",qs,answers,"abc",supp,"now", 1000l);
+			TransmissionPacket temp = new TransmissionPacket(0,"kash","Who what when where how at 11am?",qs,answers,"abc",supp,"now", 1000l, false);
 			User us = new User(filesDir,"Ced","ced@ceds.com",23,"Black","Male");
 			ArrayList<TransmittablePacket> hi = new ArrayList<TransmittablePacket>();
 			hi.add(temp);
@@ -202,6 +204,17 @@ public class UtilityFuncs {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+	}
+	
+	public static String getURLHost(String url) {
+		if (!url.startsWith("http://"))
+			url = "http://" + url;
+		try {
+			return new URL(url).getHost();
+		} catch (MalformedURLException e) {
+			Log.d("UtilityFuncs-getURLHost", "Unable to parse URL");
+			return url;
 		}
 	}
 }

@@ -11,34 +11,31 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Random;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.graphics.PorterDuff;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.Bundle;
-import android.provider.ContactsContract;
-import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -47,6 +44,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -54,6 +53,7 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -76,6 +76,7 @@ public class MyAuthActivity extends Activity {
 	private LocationListener ll;
 	private ConnectivityManager cm;
 	private NotificationManager nm;
+	private LayoutInflater li;
 	
 	private User mUser;
 	private ServerCommunicator mCommunicator;
@@ -85,6 +86,7 @@ public class MyAuthActivity extends Activity {
 	TextView question_prompt;
 	TextView send_to_server_message;
 	AutoCompleteTextView input;
+	Spinner inputDD;
 	Button submit;
 	Button skip;
 	Button mapsButton;
@@ -92,11 +94,14 @@ public class MyAuthActivity extends Activity {
 	RadioGroup radioSupp2;
 	RadioGroup radioSupp3;
 	
+	
 	//state fields
 	private boolean askOnStart = true;
 	private int mSuppResponse1;
 	private int mSuppResponse2;
 	private int mSuppResponse3;
+	private boolean isDD = false;
+	
 	//state fields for skipping
 	private boolean[] mChoice;
 	private boolean exitOnDialogClose = false;
@@ -129,7 +134,22 @@ public class MyAuthActivity extends Activity {
 	        	handleQueuedPacketUpdate();       
 	        }
 	    };
-	    
+	
+	private OnClickListener mapsButtonListener = new OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			if (cm.getActiveNetworkInfo().isConnectedOrConnecting()) {
+				startActivityForResult(new Intent(getApplicationContext(), LocationSelectorActivity.class),
+					LOCATION_SELECTOR_RESULT);
+			} else {
+				Toast.makeText(getApplicationContext(), 
+						"Sorry, it looks you don't have internet access right now. Enter the name of the location into the text field instead", 
+						Toast.LENGTH_SHORT).show();
+			}
+		}
+    };
+    
 	//private final int seed;
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -170,7 +190,11 @@ public class MyAuthActivity extends Activity {
         submit.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				if (input.getText().toString().length() > 0 && radioSupp1.getCheckedRadioButtonId() >= 0 && radioSupp2.getCheckedRadioButtonId() >= 0 && radioSupp3.getCheckedRadioButtonId() >= 0) {
+				if (((isDD && inputDD.getSelectedItem() != null) || 
+						(!isDD && input.getText().toString().length() > 0)) && 
+					radioSupp1.getCheckedRadioButtonId() >= 0 && 
+					radioSupp2.getCheckedRadioButtonId() >= 0 && 
+					radioSupp3.getCheckedRadioButtonId() >= 0) {
 					/**
 					 * Validate that all appropriate parts of the form are filled in.
 					 * Create TransmissionPacket with the answer;
@@ -182,16 +206,17 @@ public class MyAuthActivity extends Activity {
 						String qtext = currQ.getQuestion();
 						HashMap<String,String> question = currQ.getQuestionMetas();
 						ArrayList<HashMap<String,String>> answer_metas = currQ.getAnswerMetas();
-						String user_answer = input.getText().toString();
+						String user_answer = (isDD ? "" + inputDD.getSelectedItem() : input.getText().toString());
 						HashMap<String,String> supplementary_responses = new HashMap<String,String>();
 						supplementary_responses.put("supp1",""+mSuppResponse1);
 						supplementary_responses.put("supp2",""+mSuppResponse2);
 						supplementary_responses.put("supp3",""+mSuppResponse3);
 						String timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", System.currentTimeMillis());
+						//Toast.makeText(getApplicationContext(), user_answer,Toast.LENGTH_SHORT).show();
 						try {
 							mCommunicator.queuePacket(new TransmissionPacket(ServerCommunicator.getNextPacketID(getFilesDir()),
 									user_id,qtext,question,answer_metas,user_answer,supplementary_responses,
-									timestamp, amountTime));
+									timestamp, amountTime, !currQ.isRecallQ()));
 						} catch (IOException e) {
 							e.printStackTrace();
 							Toast.makeText(getApplicationContext(), "An error occured. The packet could not be saved...", Toast.LENGTH_SHORT).show();
@@ -243,20 +268,7 @@ public class MyAuthActivity extends Activity {
 			}
         });
         
-        mapsButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				if (cm.getActiveNetworkInfo().isConnectedOrConnecting()) {
-					startActivityForResult(new Intent(getApplicationContext(), LocationSelectorActivity.class),
-						LOCATION_SELECTOR_RESULT);
-				} else {
-					Toast.makeText(getApplicationContext(), 
-							"Sorry, it looks you don't have internet access right now. Enter the name of the location into the text field instead", 
-							Toast.LENGTH_SHORT).show();
-				}
-			}
-        });
+        mapsButton.setOnClickListener(mapsButtonListener);
         
         /* Initialize members */
         this.mCommunicator = new ServerCommunicator(this.getApplicationContext());
@@ -267,6 +279,8 @@ public class MyAuthActivity extends Activity {
         this.qg = new QuestionGenerator(mDbHelper,dw,getFilesDir());
         this.lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
         this.nm = (NotificationManager)this.getSystemService(Context.NOTIFICATION_SERVICE);
+        this.li = (LayoutInflater)this.getSystemService(LAYOUT_INFLATER_SERVICE);
+        
         this.ktw = new KnowledgeTranslatorWrapper();
         this.mChoice = new boolean[NUM_SKIP_CHOICES];
     	for (int i = 0; i < mChoice.length; i++) {
@@ -276,6 +290,39 @@ public class MyAuthActivity extends Activity {
         /* Initialize managers and sensor listeners */
         this.initializeLocationListener();
         cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+        
+        //testing cp
+        /* for (PackageInfo pack : getPackageManager().getInstalledPackages(PackageManager.GET_PROVIDERS)) {
+            ProviderInfo[] providers = pack.providers;
+            System.out.println(pack.packageName);
+            if (providers != null) {
+            	//System.out.println("==> nothing");
+                for (ProviderInfo provider : providers) {
+                    Log.d("Example", "cp provider: " + provider.authority);
+                    
+                }
+            }
+        }*/
+    }
+    
+    private void replaceView(boolean dropdown) {
+    	ViewGroup parent = (ViewGroup)this.findViewById(R.id.input_layout);
+    	parent.removeAllViews();
+    	if (dropdown) {
+    		View v = li.inflate(R.layout.dropdown_input, parent);
+    		inputDD = (Spinner)this.findViewById(R.id.user_answer);
+    		isDD = true;
+    	} else {
+    		View v = li.inflate(R.layout.autocomplete_input, parent);
+    		input = (AutoCompleteTextView)this.findViewById(R.id.user_answer);
+    		input.requestFocus();
+    		InputMethodManager imm = (InputMethodManager)
+    			    this.getSystemService(Context.INPUT_METHOD_SERVICE);
+    		if (imm != null) imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT, 0);
+    		isDD = false;
+    	}
+    	mapsButton = (Button)this.findViewById(R.id.mapsButton);
+    	mapsButton.setOnClickListener(mapsButtonListener);
     }
     
     protected void handleQueuedPacketUpdate() {
@@ -537,36 +584,73 @@ public class MyAuthActivity extends Activity {
     }
     
     private void askQuestion() {
-    	currQ = qg.askQuestion();
+    	currQ = qg.askQuestion(getApplicationContext());
         if (currQ != null) {
 	        question_prompt.setText(currQ.getQuestion());
-	        input.setAdapter(null);
-	        if (!currQ.getAutoCompl().equalsIgnoreCase("none")) {
-	        	//replace TextView with AutocompleteTextView
-	        	ArrayList<String> autoents = new ArrayList<String>();
-	        	if (currQ.getAutoCompl().equalsIgnoreCase("contacts")) {
-	        		Cursor c = this.getContentResolver().query(
-	        				ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
-	        				new String[] { Phone.DISPLAY_NAME }, null, null, null);
-	        		if (c.getCount() > 0) {
-	        			c.moveToFirst();
-	        			while (!c.isAfterLast()) {
-	        				autoents.add(c.getString(0));
-	        				c.moveToNext();
-	        			}
-	        		}
-	        		c.close();
-	        	} else if (currQ.getAutoCompl().equalsIgnoreCase("apps")) {
-	        		Log.d("MyAuthActivity", "Asking question about apps");
-	        		PackageManager pm = this.getPackageManager();
-	        		List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
-	        		for (ApplicationInfo pi : packages) autoents.add(pm.getApplicationLabel(pi).toString());
-	        	}
-	        	
+	        if (!isDD) input.setAdapter(null);
+	        else inputDD.setAdapter(null);
+	        /*ArrayList<String> autoents = new ArrayList<String>();
+        	if (currQ.getAnswerType().equalsIgnoreCase("Person:Contact")) {
+        		Cursor c = this.getContentResolver().query(
+        				ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+        				new String[] { Phone.DISPLAY_NAME }, null, null, null);
+        		if (c.getCount() > 0) {
+        			c.moveToFirst();
+        			while (!c.isAfterLast()) {
+        				autoents.add(c.getString(0));
+        				c.moveToNext();
+        			}
+        		}
+        		c.close();
+        	} else if (currQ.getAnswerType().equalsIgnoreCase("Application:*")) {
+        		Log.d("MyAuthActivity", "Asking question about apps");
+        		PackageManager pm = this.getPackageManager();
+        		List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+        		for (ApplicationInfo pi : packages) autoents.add(pm.getApplicationLabel(pi).toString());
+        	}
+        	if (currQ.isRecallQ()) {
+        		replaceView(true);
+        		int numAnswers = (r.nextInt(10) >= 5 ? 5 : 10);
+        		List<String> allAnswers = new ArrayList<String>();
+        		allAnswers.add(currQ.getBestAnswer());
+        		allAnswers.addAll(currQ.getNDistractionAnswers((numAnswers-1)/2));
+        		autoents.removeAll(allAnswers);
+        		for (int i = allAnswers.size(); i < numAnswers; i++) {
+        			if (autoents.size() == 0) break;
+        			int addIndex = r.nextInt(autoents.size());
+        			allAnswers.add(autoents.get(addIndex));
+        			autoents.remove(addIndex);
+        		}
+        		ArrayAdapter<String> adap = new ArrayAdapter<String>(this,
+        				android.R.layout.simple_spinner_item, allAnswers);
+        		adap.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        		inputDD.setAdapter(adap);
+        	} else if (currQ.isAutoCompl()) {
+        		replaceView(false);
 	        	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
 	            		android.R.layout.simple_dropdown_item_1line, autoents.toArray(new String[autoents.size()]));
 	        	input.setAdapter(adapter);
-	        }
+	        } else {
+	        	replaceView(false);
+	        }*/
+        	if (!currQ.isRecallQ()) {
+        		Log.d("QuestionType","Recog question");
+        		replaceView(true);
+        		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        				android.R.layout.simple_spinner_item, currQ.getAnswerListAsArr());
+        		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        		inputDD.setAdapter(adapter);
+        	} else if (currQ.isAutoCompl()) {
+        		Log.d("QuestionType","Recall autocomplete question");
+        		replaceView(false);
+	        	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+	            		android.R.layout.simple_dropdown_item_1line, currQ.getAutoComplListAsArr());
+	        	input.setAdapter(adapter);
+        	} else {
+        		Log.d("QuestionType","Neither type");
+        		replaceView(false);
+        	}
+        	
 	        if (currQ.getMapView()) {
 	        	mapsButton.setEnabled(true);
 	        	if (cm.getActiveNetworkInfo().isConnectedOrConnecting()) {
@@ -578,13 +662,16 @@ public class MyAuthActivity extends Activity {
 	        	input.setText("");
 	        } else {
 	        	mapsButton.setEnabled(false);
-	        	input.setEnabled(true);
-	        	input.setHint("Enter Answer...");
-	        	input.setText("");
-	        	input.requestFocus();
+	        	if (!isDD) {
+	        		input.setEnabled(true);
+	        		input.setHint("Enter Answer...");
+	        		input.setText("");
+	        		input.requestFocus();
+	        	}
 	        }
 	        questionStartTime = System.currentTimeMillis();
         } else {
+        	question_prompt.setText(R.string.placeholder);
         	Toast.makeText(getApplicationContext(), "We do not have enough data to create a question yet, come back later!", Toast.LENGTH_SHORT).show();
         }
     }
@@ -744,8 +831,9 @@ public class MyAuthActivity extends Activity {
         		this.forcePollSubscriptions();
         		return true;
         	case (R.id.delete):
-        		//this.showDialog(DIALOG_DELETE_DB);
-        		startActivityForResult(new Intent(this, LocationSelectorActivity.class), LOCATION_SELECTOR_RESULT);
+        		this.showDialog(DIALOG_DELETE_DB);
+        		//startActivityForResult(new Intent(this, LocationSelectorActivity.class), LOCATION_SELECTOR_RESULT);
+        		//this.replaceView(isDD);
         		return true;
             default:
                 return super.onOptionsItemSelected(item);

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tns:QATs xmlns:tns="http://www.sauvik.me/QuestionAnswerTemplate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sauvik.me/QuestionAnswerTemplate QuestionAnswerTemplate.xsd ">
   <tns:QAT>
-	  <tns:QText>What application did you use on (time:date around hod)?</tns:QText>
+	  <tns:QText>What application did you use on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
 	        <tns:Description>anysubclass</tns:Description>
-	        <tns:Description>autocompl-apps</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	        <tns:Description>recogable</tns:Description>
 	    </tns:Descriptions>
 	    <tns:Tag>
 	      <tns:Class>Application</tns:Class>
@@ -40,11 +41,12 @@
   </tns:QAT>
   
   <tns:QAT>
-	  <tns:QText>Who did you call on (time:dow around hod)?</tns:QText>
+	  <tns:QText>Who did you call on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
-	        <tns:Description>autocompl-contacts</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	        <tns:Description>recogable</tns:Description>
 	    </tns:Descriptions>
 	    <tns:Tag>
 	      <tns:Class>Person</tns:Class>
@@ -63,11 +65,12 @@
   </tns:QAT>
   
   <tns:QAT>
-	  <tns:QText>Who called you on (time:dow around hod)?</tns:QText>
+	  <tns:QText>Who called you on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
-	        <tns:Description>autocompl-contacts</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	        <tns:Description>recogable</tns:Description>
 	    </tns:Descriptions>
 	    <tns:Tag>
 	      <tns:Class>Person</tns:Class>
@@ -86,11 +89,12 @@
   </tns:QAT>
   
   <tns:QAT>
-	  <tns:QText>Who did you SMS message on (time:dow around hod)?</tns:QText>
+	  <tns:QText>Who did you SMS message on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
-	        <tns:Description>autocompl-contacts</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	        <tns:Description>recogable</tns:Description>
 	    </tns:Descriptions>
 	    <tns:Tag>
 	      <tns:Class>Person</tns:Class>
@@ -113,7 +117,8 @@
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
-	        <tns:Description>autocompl-contacts</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	        <tns:Description>recogable</tns:Description>
 	    </tns:Descriptions>
 	    <tns:Tag>
 	      <tns:Class>Person</tns:Class>
@@ -132,7 +137,7 @@
   </tns:QAT>
   
   <tns:QAT>
-	  <tns:QText>What did you search the internet for on (time:dow , date)?</tns:QText>
+	  <tns:QText>What did you search the internet for on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -146,14 +151,16 @@
   </tns:QAT>
   
   <tns:QAT>
-	  <tns:QText>What website did you visit on (time:dow , around hod)?</tns:QText>
+	  <tns:QText>What website did you visit on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	        <tns:Description>recogable</tns:Description>
 	    </tns:Descriptions>
 	    <tns:Tag>
 	      <tns:Class>Internet</tns:Class>
-	      <tns:SubClass>Visited-Site-Title</tns:SubClass>
+	      <tns:SubClass>Visited-Site-Url</tns:SubClass>
 	    </tns:Tag>
 	  </tns:Acond>
 	  <tns:Qconds/>

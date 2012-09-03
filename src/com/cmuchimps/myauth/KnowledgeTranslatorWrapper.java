@@ -1,6 +1,8 @@
 package com.cmuchimps.myauth;
 
 import java.lang.reflect.Modifier;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 
@@ -566,7 +568,15 @@ public class KnowledgeTranslatorWrapper extends Service {
 					cv.put("subclass", "Visited-Site-Url");
 					cv.put("idtype", "factsid");
 					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
-					cv.put("subvalue", c.getString(Browser.HISTORY_PROJECTION_URL_INDEX));
+					cv.put("subvalue", UtilityFuncs.getURLHost(c.getString(Browser.HISTORY_PROJECTION_URL_INDEX)));
+					/*try {
+						String tmpURL = c.getString(Browser.HISTORY_PROJECTION_URL_INDEX);
+						if (!tmpURL.startsWith("http://")) tmpURL = "http://"+tmpURL;
+						String subval = new URL(tmpURL).getHost();
+						cv.put("subvalue", subval);
+					} catch (MalformedURLException e) {
+						cv.put("subvalue", c.getString(Browser.HISTORY_PROJECTION_URL_INDEX));
+					}*/
 					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 					//internet:visited-site-title
 					cv = new ContentValues();

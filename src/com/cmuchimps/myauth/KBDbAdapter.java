@@ -112,7 +112,7 @@ public class KBDbAdapter {
 			Log.w(LOG_TAG, "Upgrading database from version " + oldVersion + " to "
                     + newVersion + ", which will destroy all old data");
 			for (String s : TABLES) {
-				db.execSQL("DROP TABLE IF EXISTS " + TABLES);
+				db.execSQL("DROP TABLE IF EXISTS " + s);
 			}
 			onCreate(db);
 		}
@@ -416,7 +416,7 @@ public class KBDbAdapter {
     	}
     	toDel.close();
     	
-    	mDb.delete(META_TABLE, "factsid=" + rowId, null);
+    	mDb.delete(META_TABLE, "qatid=" + rowId, null);
     	return mDb.delete(QAT_TABLE, KEY_ROWID+"="+rowId, null) > 0;
     }
     

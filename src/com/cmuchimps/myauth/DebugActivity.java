@@ -296,7 +296,7 @@ public class DebugActivity extends Activity {
     }
     
     private void askQuestion() {
-    	currQ = qg.askQuestion();
+    	currQ = qg.askQuestion(this.getApplicationContext());
         if (currQ != null) {
 	        output.setText(currQ.getQuestion());
         } else {
