@@ -3,6 +3,7 @@ package com.cmuchimps.myauth;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -10,7 +11,6 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.text.format.Time;
 import android.util.Log;
 
 import com.cmuchimps.myauth.DataWrapper.Acond;
@@ -338,6 +338,72 @@ public class KBDbAdapter {
     	return fact_id;
     }
     
+    /**
+     * Finds all facts with the given <tag_class,subclass,subvalue> tuples.
+     * subclass and subvalue values can be '*' which means that those values can be ignored
+     * for multiple subclasses of the same tag class, it is permissible to pass
+     * in an array of tags with duplicate entries.
+     * 
+     * e.g. to find all facts with Person:Contact=Jason and Person User,
+     *      parameters would look like:
+     *      	tags: ['Person','Person']
+     *      	subclasses: ['Contact','User']
+     *      	subvalues: ['Jason','*'].
+     *      
+     *      The return value will be a list of factids that have the given tags.
+     * @param tags
+     * @param subclasses
+     * @param subvalues
+     * @return
+     */
+    public Long[] findAllFactsWithTags(String[] tags, String[] subclasses, String[] subvalues) {
+    	if (tags.length != subclasses.length && subvalues.length != tags.length)
+    		return new Long[0];
+    	long[] tag_class_ids = new long[tags.length];
+    	int counter = 0;
+    	ArrayList<Integer> valid = new ArrayList<Integer>();
+    	for (int i = 0; i < tags.length; i++) {
+    		String s = tags[i];
+    		long val = this.findTagClassByName(s);
+    		if (val >= 0) valid.add(i);
+    		tag_class_ids[counter++] = val;
+    	}
+    	
+    	ArrayList<HashSet<Long>> queryResults = new ArrayList<HashSet<Long>>();
+    	// Get facts that match each qualifying valid tag,subclass,subvalue tuple
+    	for (int index : valid) {
+    		StringBuffer selectionQuery = new StringBuffer();
+    		selectionQuery.append("tag_classid = " + tag_class_ids[index]);
+    		if (!subclasses[index].equalsIgnoreCase("*")) {
+    			selectionQuery.append(" AND subclass = '" + subclasses[index] + "'");
+    			if (!subvalues[index].equalsIgnoreCase("*")) 
+    				selectionQuery.append(" AND subvalue = '" + subvalues[index] + "'");
+    		}
+    		Cursor c = mDb.query(TAGS_TABLE, 
+    				new String[] { KEY_ROWID, "tag_classid", "subclass", "subvalue", "factsid" }, 
+        			selectionQuery.toString(), null, null, null, null);
+    		if (c != null && c.getCount() > 0) {
+    			HashSet<Long> queryResult = new HashSet<Long>();
+    			c.moveToFirst();
+    			while (!c.isAfterLast()) {
+    				queryResult.add(c.getLong(c.getColumnIndex("factsid")));
+    				c.moveToNext();
+    			}
+    			c.close();
+    			queryResults.add(queryResult);
+    		}
+    	}
+    	
+    	// If no valid results, then return nothing
+    	if (queryResults.size() == 0)
+    		return new Long[0];
+    	// Intersect all ArrayLists in queryLists so that we can get only the facts that satisfy all constraints
+    	HashSet<Long> cum = queryResults.get(0);
+    	for (int i = 1; i < queryResults.size(); i++)
+    		cum.retainAll(queryResults.get(i));
+    	
+    	return cum.toArray(new Long[cum.size()]);
+    }
     /**
      * 
      * @param rowId

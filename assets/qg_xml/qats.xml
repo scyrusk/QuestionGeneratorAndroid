@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tns:QATs xmlns:tns="http://www.sauvik.me/QuestionAnswerTemplate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sauvik.me/QuestionAnswerTemplate QuestionAnswerTemplate.xsd ">
-  <tns:QAT>
+	 <tns:QAT>
 	  <tns:QText>What application did you use on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
@@ -15,9 +15,9 @@
 	    </tns:Tag>
 	  </tns:Acond>
 	  <tns:Qconds/>
-  </tns:QAT>
-  
-  <tns:QAT>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
 	  <tns:QText>Where were you on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
@@ -38,9 +38,9 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
-  </tns:QAT>
-  
-  <tns:QAT>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
 	  <tns:QText>Who did you call on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
@@ -62,9 +62,9 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
-  </tns:QAT>
-  
-  <tns:QAT>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
 	  <tns:QText>Who called you on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
@@ -86,9 +86,9 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
-  </tns:QAT>
-  
-  <tns:QAT>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
 	  <tns:QText>Who did you SMS message on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
@@ -110,9 +110,9 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
-  </tns:QAT>
-  
-  <tns:QAT>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
 	  <tns:QText>Who SMS messaged you on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
@@ -134,9 +134,9 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
-  </tns:QAT>
-  
-  <tns:QAT>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
 	  <tns:QText>What did you search the internet for on (time:dow , date , around hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
@@ -148,9 +148,9 @@
 	    </tns:Tag>
 	  </tns:Acond>
 	  <tns:Qconds/>
-  </tns:QAT>
-  
-  <tns:QAT>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
 	  <tns:QText>What website did you visit on (time:dow , date , around hod)? [format your answer as a url-google.com]</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
@@ -164,5 +164,5 @@
 	    </tns:Tag>
 	  </tns:Acond>
 	  <tns:Qconds/>
-  </tns:QAT>
+	 </tns:QAT>
 </tns:QATs>
