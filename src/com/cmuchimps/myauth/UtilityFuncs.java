@@ -208,13 +208,21 @@ public class UtilityFuncs {
 	}
 	
 	public static String getURLHost(String url) {
+		String[] prefixes = {
+				"www.", 
+				"m."
+		};
 		if (!url.startsWith("http://"))
 			url = "http://" + url;
 		try {
-			return new URL(url).getHost();
+			url = new URL(url).getHost();
 		} catch (MalformedURLException e) {
 			Log.d("UtilityFuncs-getURLHost", "Unable to parse URL");
-			return url;
 		}
+		for (String pre : prefixes) {
+			if (url.startsWith(pre))
+				url = url.substring(pre.length());
+		}
+		return url;
 	}
 }

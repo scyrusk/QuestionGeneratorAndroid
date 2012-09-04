@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
@@ -155,6 +156,7 @@ public class MyAuthActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.question);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         
         /* Initialize UI elements */
         question_prompt = (TextView)this.findViewById(R.id.question_prompt);
@@ -305,6 +307,14 @@ public class MyAuthActivity extends Activity {
         }*/
     }
     
+    private void testFactFinder() {
+    	String[] tags = { "Internet" };
+    	String[] subclasses = { "*" };
+    	String[] subvalues = { "*" };
+    	
+    	Long[] facts = mDbHelper.findAllFactsWithTags(tags, subclasses, subvalues);
+    	this.printFacts(facts);
+    }
     private void replaceView(boolean dropdown) {
     	ViewGroup parent = (ViewGroup)this.findViewById(R.id.input_layout);
     	parent.removeAllViews();
@@ -383,6 +393,7 @@ public class MyAuthActivity extends Activity {
     			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
     		}
     	}
+    	this.testFactFinder();
     }
     
     @Override
@@ -994,12 +1005,15 @@ public class MyAuthActivity extends Activity {
     }
     
     private void queueSkipQuestionPacket(String explanation) {
-    	String qtext = prevQ.getQuestion();
-		HashMap<String,String> question = prevQ.getQuestionMetas();
+    	long amountTime = System.currentTimeMillis() - questionStartTime;
+    	String qtext = currQ.getQuestion();
+		HashMap<String,String> question = currQ.getQuestionMetas();
 		String user_id = getUser().unique_id;
 		String timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", System.currentTimeMillis());
 		try {
-			TransmittablePacket tp = new SkipQuestionPacket(ServerCommunicator.getNextPacketID(getFilesDir()),qtext, question, mChoice[0],mChoice[1],mChoice[2],mChoice[3],explanation,timestamp,user_id);
+			TransmittablePacket tp = new SkipQuestionPacket(ServerCommunicator.getNextPacketID(getFilesDir()),
+					qtext, question, mChoice[0],mChoice[1],mChoice[2],mChoice[3],
+					explanation,timestamp,user_id,!currQ.isRecallQ(), amountTime);
 			mCommunicator.queuePacket(tp);
 			handleQueuedPacketUpdate();
 		} catch (IOException e) {

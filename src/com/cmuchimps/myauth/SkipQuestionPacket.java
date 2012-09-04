@@ -20,16 +20,22 @@ public class SkipQuestionPacket extends TransmittablePacket {
 	public String explanation;
 	public String timestamp;
 	public String user_id;
+	public long amountTime;
+	public boolean isRecog;
 	
 	public SkipQuestionPacket() {
-		initialize(-1,"", new HashMap<String,String>(), false, false, false, false, "", "", "");
+		initialize(-1,"", new HashMap<String,String>(), false, false, false, false, "", "", "", false, 0l);
 	}
 	
-	public SkipQuestionPacket(int rid,String qt, HashMap<String,String> qms, boolean c1, boolean c2, boolean c3, boolean c4, String e, String ts, String uid) {
-		initialize(rid, qt, qms, c1, c2, c3, c4, e, ts, uid);
+	public SkipQuestionPacket(int rid,String qt, HashMap<String,String> qms, boolean c1, 
+			boolean c2, boolean c3, boolean c4, String e, String ts, String uid, boolean ir,
+			long at) {
+		initialize(rid, qt, qms, c1, c2, c3, c4, e, ts, uid, ir, at);
 	}
 	
-	private void initialize(int rid, String qt, HashMap<String,String> qms, boolean c1, boolean c2, boolean c3, boolean c4, String e, String ts, String uid) {
+	private void initialize(int rid, String qt, HashMap<String,String> qms, boolean c1, 
+			boolean c2, boolean c3, boolean c4, String e, String ts, String uid, boolean ir,
+			long at) {
 		response_id = rid;
 		qtext = qt;
 		question = UtilityFuncs.duplicateMap(qms);
@@ -40,6 +46,8 @@ public class SkipQuestionPacket extends TransmittablePacket {
 		explanation = e;
 		timestamp = ts;
 		user_id = uid;
+		isRecog = ir;
+		amountTime = at;
 	}
 	
 	@Override
@@ -61,6 +69,9 @@ public class SkipQuestionPacket extends TransmittablePacket {
 		retVal.add(new BasicNameValuePair("explanation", this.explanation));
 		retVal.add(new BasicNameValuePair("timestamp", this.timestamp));
 		retVal.add(new BasicNameValuePair("qtext", qtext));
+		retVal.add(new BasicNameValuePair("isRecog",""+isRecog));
+		retVal.add(new BasicNameValuePair("amountTime", ""+amountTime));
+		
 		for (String qkey : question.keySet()) {
 			retVal.add(new BasicNameValuePair("question_" + qkey, question.get(qkey)));
 		}
