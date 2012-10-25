@@ -5,3 +5,9 @@ Location
 Phonecall
 SmsMessage
 Internet
+UserDictionary
+Contact
+Audio
+Video
+Artist
+Image

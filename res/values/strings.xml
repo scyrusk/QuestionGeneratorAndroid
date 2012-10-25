@@ -5,12 +5,12 @@
     <string name="user_activity_name">New User Form</string>
     <string name="consent_activity_name">Consent Form</string>
     <string name="location_selector_activity_name">Pick a Location</string>
-    <string name="placeholder">We could not create a question at this time. Hit \'Skip Question\' to try again.</string>
+    <string name="placeholder">I don\'t have any questions to ask you right now. Hit the \'Skip Question\' button to try again.</string>
     
     <string name="user_form_prompt">Thanks for participating in this study! First, please fill out the following form:</string>
 	<string name="UA_age_prompt">Age:</string>
 	<string name="UA_gender_prompt">Gender:</string>
-	<string name="UA_name_prompt">Name:</string>
+	<string name="UA_name_prompt">Alias:</string>
 	<string name="UA_ethnicity_prompt">Ethnicity:</string>
 	<string name="UA_email_prompt">Email:</string>
 	<string name="UA_male">Male</string>
@@ -25,7 +25,7 @@
 	<string name="presupp">Please answer the following questions on a scale of 1 (Strongly Disagree) to 5 (Strongly Agree)</string>
 	<string name="supp1_prompt">I am confident in my answer.</string>
 	<string name="supp2_prompt">It was easy for me to remember the answer to this question.</string>
-	<string name="supp3_prompt">No one else would know the answer to this question.</string>
+	<string name="supp3_prompt">Few other people would know the answer to this question.</string>
 	
 	<string name="one">1</string>
 	<string name="two">2</string>
@@ -1044,5 +1044,401 @@
 		<item>bankrate.com</item>
 		<item>continental.com</item>
 		<item>tvguide.com</item>
+	</string-array>
+	
+	<string-array name="top_music">
+	    <item>Ai Se Eu Te Pego</item>
+		<item>Payphone (feat. Wiz Khalifa)</item>
+		<item>Somebody That I Used To Know (feat. Kimbra)</item>
+		<item>What Makes You Beautiful</item>
+		<item>Princess of China (feat. Rihanna)</item>
+		<item>Call Me Maybe</item>
+		<item>We Are Never Ever Getting Back Together </item>
+		<item>Vart Jag Än Går</item>
+		<item>Need You Now</item>
+		<item>One More Night</item>
+		<item>As Long As You Love Me (feat. Big Sean)</item>
+		<item>Some Nights</item>
+		<item>Party In The U.S.A.</item>
+		<item>Titanium (feat. Sia)</item>
+		<item>Flytta På Dej!</item>
+		<item>Whistle</item>
+		<item>Someone Like You</item>
+		<item>She Wolf (Falling To Pieces) (feat. Sia)</item>
+		<item>Wide Awake</item>
+		<item>We Are Young (feat. Janelle Monáe)</item>
+		<item>Yo Te Esperaré</item>
+		<item>Blow Me (One Last Kiss)</item>
+		<item>Mama Lover</item>
+		<item>Summer Paradise (feat. Sean Paul)</item>
+		<item>One Thing</item>
+		<item>Rolling in the Deep</item>
+		<item>Good Time (feat. Carly Rae Jepsen)</item>
+		<item>Little Talks</item>
+		<item>Set Fire to the Rain</item>
+		<item>Read All About It (Pt. III)</item>
+		<item>Price Tag (feat. B.o.B)</item>
+		<item>I Won\'t Give Up</item>
+		<item>Starships</item>
+		<item>One Day / Reckoning Song</item>
+		<item>Last Night </item>
+		<item>Don\'t Wake Me Up</item>
+		<item>Where Have You Been</item>
+		<item>Ai Se Eu Te Pego (English Version) Oh, If I Catch You</item>
+		<item>Calling (and Alesso)</item>
+		<item>Pound The Alarm</item>
+		<item>Get It Started (feat. Shakira)</item>
+		<item>Some Die Young</item>
+		<item>Because Of You</item>
+		<item>Lights</item>
+		<item>Hall Of Fame (feat. Will.I.Am)</item>
+		<item>Madness </item>
+		<item>Hello (feat. Dragonette)</item>
+		<item>This Is Love (feat. Eva Simons)</item>
+		<item>Guardian</item>
+		<item>Paradise</item>
+		<item>The Scientist</item>
+		<item>The A Team</item>
+		<item>Boyfriend</item>
+		<item>Drive By</item>
+		<item>Dance Again (feat. Pitbull)</item>
+		<item>Wild Ones (feat. Sia)</item>
+		<item>Balada</item>
+		<item>Mirror (feat. Bruno Mars)</item>
+		<item>I\'m Yours</item>
+		<item>Like Toy Soldiers</item>
+		<item>Single Ladies (feat. J-Son and Manu-L)</item>
+		<item>Battle Scars (feat. Lupe Fiasco) </item>
+		<item>Gangnam Style</item>
+		<item>Give Your Heart A Break</item>
+		<item>Bad Day</item>
+		<item>Et Alors !</item>
+		<item>Nothing</item>
+		<item>We Found Love (feat. Calvin Harris)</item>
+		<item>Burn It Down</item>
+		<item>Ma chérie (feat. The Beat Shakers)</item>
+		<item>Moves Like Jagger (feat. Christina Aguilera)</item>
+		<item>Grenade</item>
+		<item>Want U Back</item>
+		<item>Spectrum (Say My Name)</item>
+		<item>Dansa Pausa</item>
+		<item>I Will Wait</item>
+		<item>Paparazzi</item>
+		<item>The Fighter (feat. Ryan Tedder)</item>
+		<item>Mockingbird</item>
+		<item>Summertime Sadness</item>
+		<item>Theme Song</item>
+		<item>Let Me Love You (Until You Learn To Love Yourself) (feat. Sia)</item>
+		<item>Both Of Us (feat. Taylor Swift)</item>
+		<item>What Doesn\'t Kill You (Stronger)</item>
+		<item>Wonderwall</item>
+		<item>Firework</item>
+		<item>Take Care (feat. Rihanna)</item>
+		<item>Halo</item>
+		<item>Breakeven</item>
+		<item>Skinny Love</item>
+		<item>We Belong Together</item>
+		<item>Danza Kuduro (feat. Lucenzo)</item>
+		<item>Reckoning Song</item>
+		<item>Där Jag Hänger Min Hatt</item>
+		<item>Give Me Everything (Tonight) (feat. Afrojack, Nayer and Ne-Yo)</item>
+		<item>How We Do (Party)</item>
+		<item>Scream</item>
+		<item>Pursuit of Happiness (nightmare) (feat. Mgmt and Ratatat)</item>
+		<item>Love Story</item>
+		<item>International Love (feat. Chris Brown)</item>
+		<item>Mercy (feat. Party Rock Anthem (feat. GoonRock and Lauren Bennett)</item>
+		<item>Dark Side</item>
+		<item>Love The Way You Lie (feat. Rihanna)</item>
+		<item>Chasing The Sun</item>
+		<item>Hate It Or Love It (feat. Let\'s Go (feat. Ne-Yo)</item>
+		<item>Turn Up The Love (feat. Cover Drive)</item>
+		<item>Crazy</item>
+		<item>Glad You Came</item>
+		<item>Ass Like That</item>
+		<item>On The Floor (feat. Pitbull)</item>
+		<item>Blue Jeans</item>
+		<item>Euphoria</item>
+		<item>Next To You (feat. Justin Bieber)</item>
+		<item>Tacatá</item>
+		<item>Niggas In Paris (feat. Jay-Z and Kanye West)</item>
+		<item>Too Close</item>
+		<item>Lyckligare Nu</item>
+		<item>Domino</item>
+		<item>If You Only Knew</item>
+		<item>Fix You</item>
+		<item>Wonderful World</item>
+		<item>Since U Been Gone</item>
+		<item>Rayos De Sol (feat. Henry Mendez)</item>
+		<item>Settle Down</item>
+		<item>Queen Of California</item>
+		<item>She\'s So Mean</item>
+		<item>I Can Only Imagine (feat. Chris Brown and Lil Wayne)</item>
+		<item>I Want To Hold Your Hand</item>
+		<item>It Was A Good Day</item>
+		<item>Lego House</item>
+		<item>Without You (feat. Usher)</item>
+		<item>Beggin On Your Knees</item>
+		<item>I Love It</item>
+		<item>Slapeloze Nachten</item>
+		<item>Lovesong</item>
+		<item>Everybody Talks</item>
+		<item>Days Of Elijah</item>
+		<item>Stay</item>
+		<item>Better Together</item>
+		<item>Poker Face</item>
+		<item>Kallenavn</item>
+		<item>Primadonna</item>
+		<item>Da Bop</item>
+		<item>Overjoyed</item>
+		<item>Baby Come Back</item>
+		<item>Young, Wild and Free (feat. Bruno Mars and Snoop Dogg)</item>
+		<item>Turn Me On (feat. Nicki Minaj)</item>
+		<item>Video Games</item>
+		<item>Dare You To Move</item>
+		<item>Heart Attack</item>
+		<item>No Lie (feat. Drake)</item>
+		<item>Lord, I Give You My Heart</item>
+		<item>The Show</item>
+		<item>Bohemian Rhapsody</item>
+		<item>Jag Saknar Dig Mindre Och Mindre</item>
+		<item>More Than This</item>
+		<item>Empire State of Mind (feat. Alicia Keys)</item>
+		<item>Only Girl (In The World)</item>
+		<item>Vart Jag Mig I Världen Vänder</item>
+		<item>Hun Tog Min Guitar</item>
+		<item>All Around The World (feat. Ludacris)</item>
+		<item>D.A.N.C.E.</item>
+		<item>Everytime</item>
+		<item>With Or Without You</item>
+		<item>Language</item>
+		<item>I Can Only Imagine</item>
+		<item>Imagine (feat. Eric Saade)</item>
+		<item>My Kind Of Love</item>
+		<item>R.I.P. (feat. Tinie Tempah)</item>
+		<item>A Drop In the Ocean</item>
+		<item>Helt Min Egen </item>
+		<item>Lord I Lift Your Name On High</item>
+		<item>Love You Like A Love Song</item>
+		<item>Pumped Up Kicks</item>
+		<item>Lost In The Echo</item>
+		<item>Overgir Mig Langsomt </item>
+		<item>Runaways</item>
+		<item>Faxe Kondi</item>
+		<item>O Fortuna</item>
+		<item>Sigh No More</item>
+		<item>Kick Out The Epic Motherfucker</item>
+		<item>Chasing Cars</item>
+		<item>Let Me See (feat. Rick Ross)</item>
+		<item>Tröjan Du Hatar</item>
+		<item>I Won\'t Let You Go</item>
+		<item>Perfect For Me</item>
+		<item>Marry You</item>
+		<item>Party Shaker (feat. Nicco)</item>
+		<item>Winter Winds</item>
+		<item>Free</item>
+		<item>Æ Vil Bare Dans</item>
+		<item>I Follow Rivers</item>
+		<item>Oh No!</item>
+		<item>I Cry</item>
+		<item>We\'ll Be Coming Back (feat. Example)</item>
+		<item>Thinking About You</item>
+		<item>Drunk</item>
+		<item>Glory Glory Man United</item>
+		<item>Happy Birthday</item>
+		<item>Wish You Were Here</item>
+		<item>Wanted You More</item>
+		<item>Imagine</item>
+		<item>Secret</item>
+		<item>The Stand</item>
+		<item>Can\'t Get Better Than This</item>
+		<item>Ho Hey</item>
+		<item>C\'est La Vie</item>
+		<item>Il Pulcino Pio</item>
+		<item>Falder</item>
+		<item>Single Ladies (Put A Ring On It)</item>
+		<item>My Heart Is Refusing Me</item>
+		<item>Everything\'s Gonna Be Alright</item>
+		<item>Heartbeat</item>
+		<item>Sexy And I Know It</item>
+		<item>Oh Love</item>
+		<item>Sad Song</item>
+		<item>Bara Bará Bere Berê</item>
+		<item>Depth Over Distance</item>
+		<item>Love The Way You Lie (part Takin\' Back My Love (feat. Ciara)</item>
+		<item>Get Free (feat. Amber Coffman)</item>
+		<item>Taro</item>
+		<item>Parade</item>
+		<item>Wherever I Go</item>
+		<item>One Time</item>
+		<item>Love Is A Verb</item>
+		<item>Hotel California</item>
+		<item>Born And Raised</item>
+		<item>Love Song</item>
+		<item>Enough Of No Love (feat. Lil Wayne)</item>
+		<item>What You Waiting For?</item>
+		<item>Somewhere Over The Rainbow</item>
+		<item>Survival (Official Song Of The London Feel So Close</item>
+		<item>Brokenhearted</item>
+		<item>Next To Me</item>
+		<item>Wien - Berlin</item>
+		<item>Good Feeling</item>
+		<item>Stan (feat. Dido)</item>
+		<item>I Can\'t Make You Love Me/nick Of Time</item>
+		<item>Hoppípolla</item>
+		<item>Explode</item>
+		<item>Sitting, Waiting, Wishing</item>
+		<item>Up All Night</item>
+		<item>Havoc</item>
+		<item>Blown Away</item>
+		<item>Hate That I Love You (feat. Ne-Yo)</item>
+		<item>Live My Life (feat. Justin Bieber)</item>
+		<item>Billie Jean</item>
+		<item>I Don\'t Want To Miss A Thing</item>
+		<item>Beauty and De Brains</item>
+		<item>Man In The Mirror</item>
+		<item>Moments</item>
+		<item>Here I Am Lord</item>
+		<item>\'til You</item>
+		<item>Starry Eyed</item>
+		<item>Addicted To You</item>
+		<item>My Boo (feat. Alicia Keys)</item>
+		<item>Tong Hua</item>
+		<item>Apologize (feat. OneRepublic)</item>
+		<item>Freedom Song</item>
+		<item>Mr. Brightside</item>
+		<item>Home</item>
+		<item>Timshel</item>
+		<item>No Name</item>
+		<item>Zombie</item>
+		<item>Right Round (feat. Ke$ha)</item>
+		<item>Fitzpleasure</item>
+		<item>Wedding Dress</item>
+		<item>Work Hard Play Hard</item>
+		<item>Daughters</item>
+		<item>Lucky (duet with Colbie Caillat)</item>
+		<item>Break Your Heart (Remix) (feat. Ludacris)</item>
+		<item>Breakaway</item>
+		<item>Ikke Mere Tid </item>
+		<item>She Will Be Loved</item>
+		<item>Wanted</item>
+		<item>I\'ll Always Remember You</item>
+		<item>Just The Way You Are</item>
+		<item>Up! (Remix) (feat. Creep</item>
+		<item>Gotta Be You</item>
+		<item>Hallelujah</item>
+		<item>No Love (feat. Lil Wayne)</item>
+		<item>Falling In</item>
+		<item>Every Teardrop Is A Waterfall</item>
+		<item>Bangarang</item>
+		<item>Woman Down</item>
+		<item>Umbrella (feat. Jay-Z)</item>
+		<item>New Divide</item>
+		<item>When Love Takes Over (feat. Kelly Rowland)</item>
+		<item>Critical Acclaim</item>
+		<item>Everything About You</item>
+	</string-array>
+	
+	<string-array name="top_artists">
+	    <item>Lil Wayne</item>
+		<item>Rihanna</item>
+		<item>Justin Bieber</item>
+		<item>Taylor Swift</item>
+		<item>Nicki Minaj</item>
+		<item>Eminem</item>
+		<item>Chris Brown</item>
+		<item>Jason Aldean</item>
+		<item>Akon</item>
+		<item>Carly Rae Jepsen</item>
+		<item>Linkin Park</item>
+		<item>Rick Ross</item>
+		<item>DJ Tiësto</item>
+		<item>Pitbull</item>
+		<item>Maroon</item>
+		<item>Usher</item>
+		<item>LMFAO</item>
+		<item>Lucky Dube</item>
+		<item>Dave Moore</item>
+		<item>Skrillex</item>
+		<item>Nelly</item>
+		<item>Adele</item>
+		<item>Shakira</item>
+		<item>Trey Songz</item>
+		<item>Drake</item>
+		<item>Michael Jackson</item>
+		<item>One Direction</item>
+		<item>Beyoncé</item>
+		<item>Insane Clown Posse</item>
+		<item>Metallica</item>
+		<item>R. Kelly</item>
+		<item>Don Moen</item>
+		<item>Yolanda Adams</item>
+		<item>Bob Marley</item>
+		<item>Coldplay</item>
+		<item>Cent</item>
+		<item>The Sex Pistols</item>
+		<item>All That Remains</item>
+		<item>Alan Jackson</item>
+		<item>Billboard</item>
+		<item>Slipknot</item>
+		<item>Lil Boosie</item>
+		<item>AC/DC</item>
+		<item>Prince</item>
+		<item>Celine Dion</item>
+		<item>Ne-Yo</item>
+		<item>Tool</item>
+		<item>Britney Spears</item>
+		<item>Vincent Herbert</item>
+		<item>Nickelback</item>
+		<item>Carrie Underwood</item>
+		<item>Toby Keith</item>
+		<item>Kenny Chesney</item>
+		<item>Marvin Sapp</item>
+		<item>Lady Gaga</item>
+		<item>Zac Brown</item>
+		<item>Whitney Houston</item>
+		<item>Havana Brown</item>
+		<item>Marilyn Manson</item>
+		<item>Flo Rida</item>
+		<item>Korn</item>
+		<item>Victoria Justice</item>
+		<item>Doug Sax</item>
+		<item>Five Finger Death Punch</item>
+		<item>Enrique Iglesias</item>
+		<item>Wiz Khalifa</item>
+		<item>Avenged Sevenfold</item>
+		<item>Rebecca Malope</item>
+		<item>Owl City</item>
+		<item>Slayer</item>
+		<item>The Black Keys</item>
+		<item>Eels</item>
+		<item>Katy Perry</item>
+		<item>Los Bukis</item>
+		<item>Nusrat Fateh Ali Khan</item>
+		<item>The Beatles</item>
+		<item>Tyga</item>
+		<item>Kirk Franklin</item>
+		<item>A.R. Rahman</item>
+		<item>Jay-Z</item>
+		<item>Pac</item>
+		<item>ABBA</item>
+		<item>Deitrick Haddon</item>
+		<item>Deadmau</item>
+		<item>Muse</item>
+		<item>The Red Jumpsuit Apparatus</item>
+		<item>Kerry King</item>
+		<item>George Strait</item>
+		<item>David J</item>
+		<item>Elvis Presley</item>
+		<item>Bone Thugs-N-Harmony</item>
+		<item>Snoop Dogg</item>
+		<item>Crystal Bowersox</item>
+		<item>Jennifer Lopez</item>
+		<item>Jenni Rivera</item>
+		<item>Citizen Cope</item>
+		<item>Chainz</item>
+		<item>Smashing Pumpkins</item>
+		<item>Garth Brooks</item>
+		<item>Bill Gaither</item>
 	</string-array>
 </resources>

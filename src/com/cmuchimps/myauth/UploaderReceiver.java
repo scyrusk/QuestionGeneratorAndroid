@@ -9,7 +9,7 @@ public class UploaderReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		// TODO Auto-generated method stub
-		Log.d("UploaderReceiver", "Attempting to upload packets to server");
+		//Log.d("UploaderReceiver", "Attempting to upload packets to server");
 		Intent uploader = new Intent(context,UploaderService.class);
 		context.startService(uploader);
 	}

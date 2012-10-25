@@ -47,7 +47,6 @@ public class KnowledgeTranslatorWrapper extends Service {
         mWakeLock.acquire();
         
 		if (intent.hasExtra("dueSubs")) {
-			Toast.makeText(getApplicationContext(), intent.getStringArrayExtra("dueSubs").length + ":" + UtilityFuncs.join(intent.getStringArrayExtra("dueSubs"), ","), Toast.LENGTH_SHORT).show();
 			(new UpdaterTask()).execute(intent.getStringArrayExtra("dueSubs"));
 		} else {
 			Cursor c = getContentResolver().query(MyAuthProvider.SUBSCRIPTIONS_DUE_URI, null, null, null, null);
@@ -61,7 +60,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 				}
 				(new UpdaterTask()).execute(dueSubs);
 			} else {
-				Log.d("KnowledgeTranslatorWrapper", "No subscriptions due for an update at " + System.currentTimeMillis() + ".");
+				//Log.d("KnowledgeTranslatorWrapper", "No subscriptions due for an update at " + System.currentTimeMillis() + ".");
 			}
 			c.close();
 		}
@@ -96,15 +95,15 @@ public class KnowledgeTranslatorWrapper extends Service {
 			for (int i = 0; i < params.length; i++) {
 				String s = params[i];
 				try {
-					Log.d("KnowledgeTranslatorWrapper", "com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + s + "KnowledgeSubscription");
+					//Log.d("KnowledgeTranslatorWrapper", "com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + s + "KnowledgeSubscription");
 					Class c = Class.forName("com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + s + "KnowledgeSubscription");
 					if (!(Modifier.isStatic(c.getModifiers()) || Modifier.isAbstract(c.getModifiers()))) {
 						KnowledgeSubscription ks = (KnowledgeSubscription) c.getDeclaredConstructor(new Class[] { KnowledgeTranslatorWrapper.class }).newInstance(new Object[] { thisObj });
 						c.getMethod("poll", null).invoke(ks, null);
-						Log.d("KnowledgeTranslatorWrapper", "Successfully polled " + s);
+						//Log.d("KnowledgeTranslatorWrapper", "Successfully polled " + s);
 					}
 				} catch (Throwable e) {
-					Log.d("KnowledgeTranslatorWrapper", "Failed to update class " + s + "KnowledgeSubscription because of " + e.getMessage());
+					//Log.d("KnowledgeTranslatorWrapper", "Failed to update class " + s + "KnowledgeSubscription because of " + e.getMessage());
 					e.printStackTrace();
 				}
 			}
@@ -120,7 +119,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 	
 	public abstract class KnowledgeSubscription {
 		public static final boolean IGNORE_DST = true;
-		//protected String db_key;
+		//public static final String db_key;
 		
 		public KnowledgeSubscription() {
 			
@@ -148,11 +147,11 @@ public class KnowledgeTranslatorWrapper extends Service {
 	 *
 	 */
 	public class CommunicationKnowledgeSubscription extends KnowledgeSubscription {
-		protected String db_key = "Communication";
+		public static final String db_key = "Communication";
 		
 		@Override
 		public void poll() {
-			Log.d("KnowledgeTranslatorWrapper", "Entering communication knowledge subscription");
+			//Log.d("KnowledgeTranslatorWrapper", "Entering communication knowledge subscription");
 			// TODO Auto-generated method stub
 			//things like SMS contacts, outgoing calls etc.
 			//Cursor c = Browser.getAllVisitedUrls(mCtx.getContentResolver());
@@ -166,7 +165,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 				long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
 				last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
 			} else {
-				Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
+				//Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
 			}
 			update_c.close();
 			
@@ -177,12 +176,12 @@ public class KnowledgeTranslatorWrapper extends Service {
 			 */
 			
 			Cursor c = getContentResolver().query(CallLog.Calls.CONTENT_URI, new String[] { Calls.DATE, Calls.NUMBER, Calls.DURATION, Calls.TYPE, Calls.CACHED_NAME}, Calls.DATE + " > " + last_updated, null, null);
-			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " Calls.CONTENT_URI returned null cursor; check the URI");
+			/*if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " Calls.CONTENT_URI returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
 					Log.d("KnowledgeTranslatorWrapper", "CallLogs query returns empty cursor.");
 				}
-			}
+			}*/
 			if (c != null && c.getCount() > 0) {
 				c.moveToFirst();
 				while (!c.isAfterLast()) {
@@ -194,6 +193,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 					dayOfWeek = (String) DateFormat.format("EEEE", date);
 					cv.put("timestamp", timestamp);
 					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "dynamic");
 					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
 					//add person:User tag
 					cv = new ContentValues();
@@ -246,12 +246,12 @@ public class KnowledgeTranslatorWrapper extends Service {
 			//Cursor people = getContentResolver().query(People.CONTENT_URI, new String[] { People.NAME, People.NUMBER }, null, null, null);
 			
 			c = getContentResolver().query(Uri.parse("content://sms/inbox"), new String[] { "date", "person", "subject", "body", "address" }, "date > " + last_updated, null, null);
-			if (c == null) Log.d("KnowledgeTranslatorWrapper",db_key + " SMS uri returned null cursor; check the URI");
+			/*if (c == null) Log.d("KnowledgeTranslatorWrapper",db_key + " SMS uri returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
 					Log.d("KnowledgeTranslatorWrapper", "SMS query returns empty cursor.");
 				}
-			}
+			}*/
 			if (c != null && c.getCount() > 0) {
 				c.moveToFirst();
 				while (!c.isAfterLast()) {
@@ -263,6 +263,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 					dayOfWeek = (String) DateFormat.format("EEEE", date);
 					cv.put("timestamp", timestamp);
 					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "dynamic");
 					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
 					//add person:User tag
 					cv = new ContentValues();
@@ -323,12 +324,12 @@ public class KnowledgeTranslatorWrapper extends Service {
 			if (c != null) c.close();
 			
 			c = getContentResolver().query(Uri.parse("content://sms/sent"), new String[] { "date", "person", "subject", "body", "address" }, "date > " + last_updated, null, null);
-			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " SMS sent uri returned null cursor; check the URI");
+			/*if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " SMS sent uri returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
 					Log.d("KnowledgeTranslatorWrapper", "SMS sent query returns empty cursor.");
 				}
-			}
+			}*/
 			if (c != null && c.getCount() > 0) {
 				c.moveToFirst();
 				while (!c.isAfterLast()) {
@@ -339,6 +340,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 					dayOfWeek = (String) DateFormat.format("EEEE", date);
 					cv.put("timestamp", timestamp);
 					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "dynamic");
 					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
 					//add person:User tag
 					cv = new ContentValues();
@@ -407,56 +409,179 @@ public class KnowledgeTranslatorWrapper extends Service {
 	 *
 	 */
 	public class MediaKnowledgeSubscription extends KnowledgeSubscription {
-		protected String db_key = "Media";
+		public static final String db_key = "Media";
 
 		@Override
 		public void poll() {
 			// TODO Auto-generated method stub
-			Cursor update_c = getContentResolver().query(MyAuthProvider.SUBSCRIPTIONS_CONTENT_URI, new String[] { "subskey", "last_update" }, "subskey = '" + db_key + "'", null, null);
+			/*Cursor update_c = getContentResolver().query(MyAuthProvider.SUBSCRIPTIONS_CONTENT_URI, new String[] { "subskey", "last_update" }, "subskey = '" + db_key + "'", null, null);
 			long last_updated = System.currentTimeMillis() - (3 * UtilityFuncs.DAY_TO_MILLIS);
 			if (update_c.getCount() > 0) {
 				update_c.moveToFirst();
-				long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
-				last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
+				//long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
+				//last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
+				last_updated = update_c.getLong(update_c.getColumnIndex("last_update"));
 			} else {
-				Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
+				//Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
 			}
 			update_c.close();
 			
-			Cursor c = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, new String[] { MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns.TITLE, MediaStore.MediaColumns.DATE_ADDED, MediaStore.Audio.AudioColumns.ARTIST}, MediaStore.MediaColumns.DATE_ADDED + " > " + last_updated, null, null);
+			Cursor c = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, 
+					new String[] { 
+						MediaStore.MediaColumns.DATE_ADDED,
+						MediaStore.Audio.AudioColumns.TITLE,
+						MediaStore.Audio.AudioColumns.ARTIST,
+						MediaStore.Audio.AudioColumns.IS_MUSIC }, 
+					MediaStore.MediaColumns.DATE_ADDED + " > " + last_updated + " AND " +
+							MediaStore.Audio.AudioColumns.IS_MUSIC + " > 0", null, null);
 			//need to change this to know when user last accessed, not added
-			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " returned null cursor; check the URI");
-			else {
-				if (c.getCount() == 0) {
-					Log.d("KnowledgeTranslatorWrapper", "MediaAudio query returns empty cursor.");
-				}
-			}
 			if (c != null && c.getCount() > 0) {
 				c.moveToFirst();
 				while (!c.isAfterLast()) {
+					//add persistent fact
+					ContentValues cv = new ContentValues();
+					String timestamp,dayOfWeek;
+					Date date = new Date(c.getLong(c.getColumnIndex(MediaStore.MediaColumns.DATE_ADDED)));
+					timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", date);
+					dayOfWeek = (String) DateFormat.format("EEEE", date);
+					cv.put("timestamp", timestamp);
+					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "persistent");
+					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
+					//audio:songtitle
+					cv = new ContentValues();
+					cv.put("tag_class", "Audio");
+					cv.put("subclass", "SongTitle");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getString(c.getColumnIndex(MediaStore.Audio.AudioColumns.TITLE)));
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
+					//audio:artist
+					cv = new ContentValues();
+					cv.put("tag_class", "Audio");
+					cv.put("subclass", "Artist");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getString(c.getColumnIndex(MediaStore.Audio.AudioColumns.ARTIST)));
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 					
+					//add dynamic fact
+					cv = new ContentValues();
+					date = new Date(c.getLong(c.getColumnIndex(MediaStore.MediaColumns.DATE_ADDED)));
+					timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", date);
+					dayOfWeek = (String) DateFormat.format("EEEE", date);
+					cv.put("timestamp", timestamp);
+					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "dynamic");
+					factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
+					//audio:songtitle
+					cv = new ContentValues();
+					cv.put("tag_class", "Audio");
+					cv.put("subclass", "SongTitle");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getString(c.getColumnIndex(MediaStore.Audio.AudioColumns.TITLE)));
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
+					//audio:artist
+					cv = new ContentValues();
+					cv.put("tag_class", "Audio");
+					cv.put("subclass", "Artist");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getString(c.getColumnIndex(MediaStore.Audio.AudioColumns.ARTIST)));
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 					c.moveToNext();
 				}
 			}
 			if (c != null) c.close();
 			
-			c = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new String[] { MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns.TITLE, MediaStore.MediaColumns.DATE_ADDED, MediaStore.Images.ImageColumns.DESCRIPTION, MediaStore.Images.ImageColumns.LATITUDE, MediaStore.Images.ImageColumns.LONGITUDE  }, MediaStore.MediaColumns.DATE_ADDED + " > " + last_updated, null, null);
-			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " returned null cursor for images; check the URI");
-			else {
-				if (c.getCount() == 0) {
-					Log.d("KnowledgeTranslatorWrapper", "MediaImages query returns empty cursor.");
-				}
-			}
+			c = getContentResolver().query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+					new String[] {
+						MediaStore.MediaColumns.DATE_ADDED,
+						MediaStore.Video.VideoColumns.TITLE,
+						MediaStore.Video.VideoColumns.LATITUDE,
+						MediaStore.Video.VideoColumns.LONGITUDE,
+						MediaStore.Video.VideoColumns.DATE_TAKEN
+			}, MediaStore.MediaColumns.DATE_ADDED + " > " + last_updated, null, null);
+
 			if (c != null && c.getCount() > 0) {
 				c.moveToFirst();
 				while (!c.isAfterLast()) {
-					
+					ContentValues cv = new ContentValues();
+					String timestamp,dayOfWeek;
+					Date date = new Date(c.getLong(c.getColumnIndex(MediaStore.Video.VideoColumns.DATE_TAKEN)));
+					timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", date);
+					dayOfWeek = (String) DateFormat.format("EEEE", date);
+					cv.put("timestamp", timestamp);
+					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "dynamic");
+					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
+					//video:title
+					cv = new ContentValues();
+					cv.put("tag_class", "Video");
+					cv.put("subclass", "Title");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getString(c.getColumnIndex(MediaStore.Video.VideoColumns.TITLE)));
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
+					//audio:artist
+					cv = new ContentValues();
+					cv.put("tag_class", "Video");
+					cv.put("subclass", "Location");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					StringBuffer locVal = new StringBuffer(""+c.getDouble(c.getColumnIndex(MediaStore.Video.VideoColumns.LATITUDE)));
+					locVal.append("," + c.getDouble(c.getColumnIndex(MediaStore.Video.VideoColumns.LONGITUDE)));
+					cv.put("subvalue", locVal.toString());
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 					c.moveToNext();
 				}
 			}
 			if (c != null) c.close();
 			
-			c = getContentResolver().query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, new String[] { MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns.TITLE, MediaStore.MediaColumns.DATE_ADDED, MediaStore.Video.VideoColumns.DESCRIPTION, MediaStore.Video.VideoColumns.LATITUDE, MediaStore.Video.VideoColumns.LONGITUDE, MediaStore.Video.VideoColumns.MINI_THUMB_MAGIC}, MediaStore.Video.VideoColumns.DATE_ADDED + " > " + last_updated, null, null);
+			c = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, 
+					new String[] { 
+					   MediaStore.MediaColumns.DATE_ADDED,
+					   MediaStore.Images.ImageColumns.DATE_TAKEN, 
+	         		   MediaStore.Images.ImageColumns.TITLE,
+	         		   MediaStore.Images.ImageColumns.LATITUDE,
+	         		   MediaStore.Images.ImageColumns.LONGITUDE }, 
+         		   MediaStore.MediaColumns.DATE_ADDED + " > " + last_updated, null, null);
+			if (c != null && c.getCount() > 0) {
+				c.moveToFirst();
+				while (!c.isAfterLast()) {
+					ContentValues cv = new ContentValues();
+					String timestamp,dayOfWeek;
+					Date date = new Date(c.getLong(c.getColumnIndex(MediaStore.Images.ImageColumns.DATE_TAKEN)));
+					timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", date);
+					dayOfWeek = (String) DateFormat.format("EEEE", date);
+					cv.put("timestamp", timestamp);
+					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "dynamic");
+					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
+					//video:title
+					cv = new ContentValues();
+					cv.put("tag_class", "Image");
+					cv.put("subclass", "Title");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getString(c.getColumnIndex(MediaStore.Images.ImageColumns.TITLE)));
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
+					//audio:artist
+					cv = new ContentValues();
+					cv.put("tag_class", "Image");
+					cv.put("subclass", "Location");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					StringBuffer locVal = new StringBuffer(""+c.getDouble(c.getColumnIndex(MediaStore.Images.ImageColumns.LATITUDE)));
+					locVal.append("," + c.getDouble(c.getColumnIndex(MediaStore.Images.ImageColumns.LONGITUDE)));
+					cv.put("subvalue", locVal.toString());
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
+					c.moveToNext();
+				}
+			}
+			if (c != null) c.close();*/
+			
 			reset_update_time(db_key);
 		}
 	}
@@ -467,7 +592,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 	 *
 	 */
 	public class InternetBrowsingKnowledgeSubscription extends KnowledgeSubscription {
-		protected String db_key = "InternetBrowsing";
+		public static final String db_key = "InternetBrowsing";
 
 		@Override
 		public void poll() {
@@ -482,18 +607,18 @@ public class KnowledgeTranslatorWrapper extends Service {
 				update_c.moveToFirst();
 				long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
 				last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
-			} else {
+			} /*else {
 				Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
-			}
+			}*/
 			update_c.close();
 			
 			Cursor c = getContentResolver().query(Browser.SEARCHES_URI, Browser.SEARCHES_PROJECTION, "date > " + last_updated, null, null);
-			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " BROWSER.SEARCHES_URI returned null cursor; check the URI");
+			/*if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " BROWSER.SEARCHES_URI returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
 					Log.d("KnowledgeTranslatorWrapper", "InternetBrowsing Searches query returns empty cursor.");
 				}
-			}
+			}*/
 			if (c != null && c.getCount() > 0) {
 				c.moveToFirst();
 				while (!c.isAfterLast()) {
@@ -506,6 +631,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 					dayOfWeek = (String) DateFormat.format("EEEE", date);
 					cv.put("timestamp", timestamp);
 					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "dynamic");
 					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
 					//add person:User tag
 					cv = new ContentValues();
@@ -536,12 +662,12 @@ public class KnowledgeTranslatorWrapper extends Service {
 			 * user_entered => ?
 			 */
 			c = getContentResolver().query(Browser.BOOKMARKS_URI, Browser.HISTORY_PROJECTION, "date > " + last_updated, null, null);
-			if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " BOOKMARKS_URI returned null cursor; check the URI");
+			/*if (c == null) Log.d("KnowledgeTranslatorWrapper", db_key + " BOOKMARKS_URI returned null cursor; check the URI");
 			else {
 				if (c.getCount() == 0) {
 					Log.d("KnowledgeTranslatorWrapper", "Browser Bookmarks query returns empty cursor.");
 				}
-			}
+			}*/
 			if (c != null && c.getCount() > 0) {
 				c.moveToFirst();
 				while (!c.isAfterLast()) {
@@ -554,6 +680,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 					dayOfWeek = (String) DateFormat.format("EEEE", date);
 					cv.put("timestamp", timestamp);
 					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "dynamic");
 					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
 					//add person:User tag
 					cv = new ContentValues();
@@ -602,21 +729,71 @@ public class KnowledgeTranslatorWrapper extends Service {
 	 *
 	 */
 	public class UserDictionaryKnowledgeSubscription extends KnowledgeSubscription {
-		protected String db_key = "UserDictionary";
+		public static final String db_key = "UserDictionary";
 
 		@Override
 		public void poll() {
 			// TODO Auto-generated method stub
+			/*
+			 * Schema info:
+			 * _id => long, search => string?, date => long (milliseconds since epoch)
+			 */
+			/*Cursor update_c = getContentResolver().query(MyAuthProvider.SUBSCRIPTIONS_CONTENT_URI, new String[] { "subskey", "last_update" }, "subskey = '" + db_key + "'", null, null);
+			long last_updated = System.currentTimeMillis() - (3 * UtilityFuncs.DAY_TO_MILLIS);
+			if (update_c.getCount() > 0) {
+				update_c.moveToFirst();
+				//long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
+				//last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
+				last_updated = update_c.getLong(update_c.getColumnIndex("last_update"));
+			} else {
+				Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
+			}
+			update_c.close();
 			
-			Cursor c = getContentResolver().query(UserDictionary.Words.CONTENT_URI, new String[] { UserDictionary.Words.WORD, UserDictionary.Words.FREQUENCY }, null, null, null);
+			Cursor c = getContentResolver().query(UserDictionary.Words.CONTENT_URI, 
+					new String[] { UserDictionary.Words.WORD, UserDictionary.Words.FREQUENCY }, null, null, null);
 			if (c != null && c.getCount() > 0) {
 				c.moveToFirst();
 				while (!c.isAfterLast()) {
 					//add data to persistent dictionary here
+					//add facts about browsing history
+					//basically, get everything where date is greater than last update time and add it as a fact
+					ContentValues cv = new ContentValues();
+					String timestamp,dayOfWeek;
+					Date date = new Date(System.currentTimeMillis());
+					timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", date);
+					dayOfWeek = (String) DateFormat.format("EEEE", date);
+					cv.put("timestamp", timestamp);
+					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "persistent");
+					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
+					//add person:User tag
+					cv = new ContentValues();
+					cv.put("tag_class", "Person");
+					cv.put("subclass", "User");
+					cv.put("idtype", "factsid");
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					//userdictionary:word
+					cv = new ContentValues();
+					cv.put("tag_class", "UserDictionary");
+					cv.put("subclass", "Word");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getString(c.getColumnIndex(UserDictionary.Words.WORD)));
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
+					//userdictionary:frequency
+					cv = new ContentValues();
+					cv.put("tag_class", "UserDictionary");
+					cv.put("subclass", "Frequency");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getInt(c.getColumnIndex(UserDictionary.Words.FREQUENCY)));
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 					c.moveToNext();
 				}
 			}
-			if (c != null) c.close();
+			if (c != null) c.close();*/
 			
 			reset_update_time(db_key);
 		}
@@ -628,7 +805,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 	 *
 	 */
 	public class ContactKnowledgeSubscription extends KnowledgeSubscription {
-		protected String db_key = "Contact";
+		public static final String db_key = "Contact";
 		
 		@Override
 		public void poll() {
@@ -636,19 +813,60 @@ public class KnowledgeTranslatorWrapper extends Service {
 			long last_updated = System.currentTimeMillis() - (3 * UtilityFuncs.DAY_TO_MILLIS);
 			if (update_c.getCount() > 0) {
 				update_c.moveToFirst();
-				long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
-				last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
+				//long temp = update_c.getLong(update_c.getColumnIndex("last_update"));
+				//last_updated = (temp < last_updated ? last_updated : temp); //either make lower limit 3 days ago or last_updated, whichever is closer to the current time
+				last_updated = update_c.getLong(update_c.getColumnIndex("last_update"));
 			} else {
-				Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
+				//Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
 			}
 			update_c.close();
 			
-			Cursor c = getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, new String[] { ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.Contacts.LAST_TIME_CONTACTED, ContactsContract.Contacts.TIMES_CONTACTED, ContactsContract.Contacts.PHOTO_ID }, null, null, null);
+			Cursor c = getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, 
+					new String[] { ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.Contacts.LAST_TIME_CONTACTED }, 
+					null, null, null);
 			if (c != null && c.getCount() > 0) {
 				c.moveToFirst();
-				
-				c.close();
+				while (!c.isAfterLast()) {
+					//add data to persistent dictionary here
+					//add facts about browsing history
+					//basically, get everything where date is greater than last update time and add it as a fact
+					/*ContentValues cv = new ContentValues();
+					String timestamp, dayOfWeek;
+					Date date = new Date(System.currentTimeMillis());
+					timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", date);
+					dayOfWeek = (String) DateFormat.format("EEEE", date);
+					cv.put("timestamp", timestamp);
+					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "persistent");
+					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
+					//add person:User tag
+					cv = new ContentValues();
+					cv.put("tag_class", "Person");
+					cv.put("subclass", "User");
+					cv.put("idtype", "factsid");
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					//Contact:Name
+					cv = new ContentValues();
+					cv.put("tag_class", "Contact");
+					cv.put("subclass", "Name");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)));
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
+					//Contact:Last_Time_Contacted
+					cv = new ContentValues();
+					cv.put("tag_class", "Contact");
+					cv.put("subclass", "Last_Time_Contacted");
+					cv.put("idtype", "factsid");
+					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
+					cv.put("subvalue", c.getInt(c.getColumnIndex(ContactsContract.Contacts.LAST_TIME_CONTACTED)));
+					//Contact:
+					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);*/
+					c.moveToNext();
+				}
 			}
+			if (c!=null) c.close();
 			
 			reset_update_time(db_key);
 		}
@@ -660,7 +878,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 	 *
 	 */
 	public class CalendarKnowledgeSubscription extends KnowledgeSubscription {
-		protected String db_key = "Calendar";
+		public static final String db_key = "Calendar";
 		
 		@Override
 		public void poll() {
@@ -675,7 +893,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 	 *
 	 */
 	public class ApplicationUseKnowledgeSubscription extends KnowledgeSubscription {
-		protected String db_key = "ApplicationUse";
+		public static final String db_key = "ApplicationUse";
 		
 		@Override
 		public void poll() {
@@ -696,6 +914,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 			dayOfWeek = (String) DateFormat.format("EEEE", date);
 			cv.put("timestamp", timestamp);
 			cv.put("dayOfWeek", dayOfWeek);
+			cv.put("persistence", "dynamic");
 			Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
 			//add person:User tag
 			cv = new ContentValues();
@@ -705,7 +924,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 			cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
 			getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 			//add application. for now, can't find subclass from market api
-			Log.d("KnowledgeTranslatorWrapper", "Adding fact for " + applicationName);
+			//Log.d("KnowledgeTranslatorWrapper", "Adding fact for " + applicationName);
 			cv = new ContentValues();
 			cv.put("tag_class", "Application");
 			cv.put("subclass", "General-Use");
@@ -713,36 +932,6 @@ public class KnowledgeTranslatorWrapper extends Service {
 			cv.put("idtype", "factsid");
 			cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
 			getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
-	        
-			/*for (int i = 0; i < apps.size(); i++) {
-				if (apps.get(i).importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-					ContentValues cv = new ContentValues();
-					String timestamp,dayOfWeek;
-					Date date = new Date(System.currentTimeMillis());
-					timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", date);
-					dayOfWeek = (String) DateFormat.format("EEEE", date);
-					cv.put("timestamp", timestamp);
-					cv.put("dayOfWeek", dayOfWeek);
-					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
-					//add person:User tag
-					cv = new ContentValues();
-					cv.put("tag_class", "Person");
-					cv.put("subclass", "User");
-					cv.put("idtype", "factsid");
-					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
-					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
-					//add application. for now, can't find subclass from market api
-					String[] composite = apps.get(i).processName.split("\\.");
-					Log.d("KnowledgeTranslatorWrapper", "Adding fact for " + composite[composite.length-1]);
-					cv = new ContentValues();
-					cv.put("tag_class", "Application");
-					cv.put("subclass", "General-Use");
-					cv.put("subvalue", composite[composite.length-1]);
-					cv.put("idtype", "factsid");
-					cv.put("idval", Long.parseLong(factsUri.getLastPathSegment()));
-					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
-				}
-			}*/
 			reset_update_time(db_key);
 		}
 	}
@@ -753,18 +942,46 @@ public class KnowledgeTranslatorWrapper extends Service {
 	 *
 	 */
 	public class LocationKnowledgeSubscription extends KnowledgeSubscription {
-		protected String db_key = "Location";
+		public static final String db_key = "Location";
 
 		@Override
 		public void poll() {
 			// TODO Auto-generated method stub
+			Cursor update_c = getContentResolver().query(MyAuthProvider.SUBSCRIPTIONS_CONTENT_URI, new String[] { "subskey", "last_update" }, "subskey = '" + db_key + "'", null, null);
+			long last_updated = System.currentTimeMillis() - 10l * UtilityFuncs.MIN_TO_MILLIS;
+			if (update_c.getCount() > 0) {
+				update_c.moveToFirst();
+				last_updated = update_c.getLong(update_c.getColumnIndex("last_update"));
+			} else {
+				//Log.d("KnowledgeTranslatorWrapper", "Could not find subscription with db_key " + db_key + " through MyAuthProvider query.");
+			}
+			update_c.close();
+			
 			LocationManager lm = (LocationManager)(getApplicationContext().getSystemService(LOCATION_SERVICE));
 			Location l = null;
-			if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-				l = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-			} else if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-				l = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-			} 
+			long bestTime = 0l;
+			float bestAccuracy = Float.MAX_VALUE;
+			long minTime = last_updated;
+			
+			List<String> matchingProviders = lm.getAllProviders();
+			for (String provider: matchingProviders) {
+				Location location = lm.getLastKnownLocation(provider);
+				if (location != null) {
+					float accuracy = location.getAccuracy();
+					long time = location.getTime();
+
+					if ((time > minTime && accuracy < bestAccuracy)) {
+						l = location;
+						bestAccuracy = accuracy;
+						bestTime = time;
+					}
+					else if (time < minTime && 
+							bestAccuracy == Float.MAX_VALUE && time > bestTime){
+						l = location;
+						bestTime = time;
+					}
+				}
+			}
 			
 			if (l != null) {
 				if ((l.getTime() > System.currentTimeMillis() - (10*UtilityFuncs.MIN_TO_MILLIS)) && l.getAccuracy() < 2000.0f) {
@@ -775,6 +992,7 @@ public class KnowledgeTranslatorWrapper extends Service {
 					dayOfWeek = (String) DateFormat.format("EEEE", date);
 					cv.put("timestamp", timestamp);
 					cv.put("dayOfWeek", dayOfWeek);
+					cv.put("persistence", "dynamic");
 					Uri factsUri = getContentResolver().insert(MyAuthProvider.FACTS_CONTENT_URI, cv);
 					//add person:User tag
 					cv = new ContentValues();
@@ -809,8 +1027,8 @@ public class KnowledgeTranslatorWrapper extends Service {
 					getContentResolver().insert(MyAuthProvider.TAGS_CONTENT_URI, cv);
 				} else {
 					//Toast.makeText(getApplicationContext(), "Last location time: " + l.getTime(), Toast.LENGTH_LONG).show();
-					Log.d("KnowledgeTranslatorWrapper", "Last location time: " + DateFormat.format("yyyy-MM-dd kk:mm:ss",l.getTime()));
-					Log.d("KnowledgeTranslatorWrapper", "Last known location accuracy: " + l.getAccuracy());
+					//Log.d("KnowledgeTranslatorWrapper", "Last location time: " + DateFormat.format("yyyy-MM-dd kk:mm:ss",l.getTime()));
+					//Log.d("KnowledgeTranslatorWrapper", "Last known location accuracy: " + l.getAccuracy());
 				}
 			}
 			reset_update_time(db_key);

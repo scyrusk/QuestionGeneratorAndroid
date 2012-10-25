@@ -68,7 +68,7 @@ public class KBXMLParser {
         				metas = this.parseMetaInfo(child);
         			}
         		}
-        		this.mDbHelper.createFact(timestamp, dayOfWeek, tags, metas);
+        		this.mDbHelper.createFact(timestamp, dayOfWeek, "dynamic", tags, metas);
         	}
         }
         catch (ParserConfigurationException e) {

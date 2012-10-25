@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tns:QATs xmlns:tns="http://www.sauvik.me/QuestionAnswerTemplate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sauvik.me/QuestionAnswerTemplate QuestionAnswerTemplate.xsd ">
 	 <tns:QAT>
-	  <tns:QText>What application did you use on (time:dow , date , around hod)?</tns:QText>
+	  <tns:QText>What application did you use on (time:dow , date , at hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -15,10 +15,16 @@
 	    </tns:Tag>
 	  </tns:Acond>
 	  <tns:Qconds/>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
 	 </tns:QAT>
 	 
 	 <tns:QAT>
-	  <tns:QText>Where were you on (time:dow , date , around hod)?</tns:QText>
+	  <tns:QText>Where were you on (time:dow , date , at hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -38,10 +44,16 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
 	 </tns:QAT>
 	 
 	 <tns:QAT>
-	  <tns:QText>Who did you call on (time:dow , date , around hod)?</tns:QText>
+	  <tns:QText>Who did you call on (time:dow , date , at hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -62,10 +74,16 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
 	 </tns:QAT>
 	 
 	 <tns:QAT>
-	  <tns:QText>Who called you on (time:dow , date , around hod)?</tns:QText>
+	  <tns:QText>Who called you on (time:dow , date , at hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -86,10 +104,16 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
 	 </tns:QAT>
 	 
 	 <tns:QAT>
-	  <tns:QText>Who did you SMS message on (time:dow , date , around hod)?</tns:QText>
+	  <tns:QText>Who did you SMS message on (time:dow , date , at hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -110,10 +134,16 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
 	 </tns:QAT>
 	 
 	 <tns:QAT>
-	  <tns:QText>Who SMS messaged you on (time:dow , date , around hod)?</tns:QText>
+	  <tns:QText>Who SMS messaged you on (time:dow , date , at hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -134,10 +164,16 @@
 	  	    </tns:Tag>
 	  	</tns:Qcond>    
 	  </tns:Qconds>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
 	 </tns:QAT>
 	 
 	 <tns:QAT>
-	  <tns:QText>What did you search the internet for on (time:dow , date , around hod)?</tns:QText>
+	  <tns:QText>What did you search the internet for on (time:dow , date , at hod)?</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -148,10 +184,16 @@
 	    </tns:Tag>
 	  </tns:Acond>
 	  <tns:Qconds/>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
 	 </tns:QAT>
 	 
 	 <tns:QAT>
-	  <tns:QText>What website did you visit on (time:dow , date , around hod)? [format your answer as a url-google.com]</tns:QText>
+	  <tns:QText>What website did you visit on (time:dow , date , at hod)? [format your answer as a url-google.com]</tns:QText>
 	  <tns:Acond>
 	    <tns:Descriptions>
 	        <tns:Description>list</tns:Description>
@@ -164,5 +206,234 @@
 	    </tns:Tag>
 	  </tns:Acond>
 	  <tns:Qconds/>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
+	  <tns:QText>What song did you add to your phone on (time:dow , date , at hod)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	        <tns:Description>recogable</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Audio</tns:Class>
+	      <tns:SubClass>SongTitle</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds/>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
+	  <tns:QText>Where did you take a photo with this phone on (time:dow , date , at hod)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	        <tns:Description>mapview</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Image</tns:Class>
+	      <tns:SubClass>Location</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds/>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
+	  <tns:QText>Where did you take a video with this phone on (time:dow , date , at hod)?</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	        <tns:Description>mapview</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Video</tns:Class>
+	      <tns:SubClass>Location</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds/>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>fact_based</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
+	  <tns:QText>Name someone you SMS messaged in the last (time:n hours).</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Person</tns:Class>
+	      <tns:SubClass>Contact</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds>
+	  	<tns:Qcond>
+	  	    <tns:RefNum>-1</tns:RefNum>
+	  	    <tns:Tag>
+	  	        <tns:Class>SmsMessage</tns:Class>
+	  	        <tns:SubClass>Outgoing</tns:SubClass>
+	  	    </tns:Tag>
+	  	</tns:Qcond>    
+	  </tns:Qconds>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>name_list</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
+	  <tns:QText>Name someone you called in the last (time:n hours).</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Person</tns:Class>
+	      <tns:SubClass>Contact</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds>
+	  	<tns:Qcond>
+	  	    <tns:RefNum>-1</tns:RefNum>
+	  	    <tns:Tag>
+	  	        <tns:Class>Phonecall</tns:Class>
+	  	        <tns:SubClass>Outgoing</tns:SubClass>
+	  	    </tns:Tag>
+	  	</tns:Qcond>    
+	  </tns:Qconds>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>name_list</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
+	  <tns:QText>Name someone who SMS messaged you in the last (time:n hours).</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Person</tns:Class>
+	      <tns:SubClass>Contact</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds>
+	  	<tns:Qcond>
+	  	    <tns:RefNum>-1</tns:RefNum>
+	  	    <tns:Tag>
+	  	        <tns:Class>SmsMessage</tns:Class>
+	  	        <tns:SubClass>Incoming</tns:SubClass>
+	  	    </tns:Tag>
+	  	</tns:Qcond>    
+	  </tns:Qconds>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>name_list</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
+	  <tns:QText>Name someone who called you in the last (time:n hours).</tns:QText>
+	  <tns:Acond>
+	    <tns:Descriptions>
+	        <tns:Description>list</tns:Description>
+	        <tns:Description>autocompl</tns:Description>
+	    </tns:Descriptions>
+	    <tns:Tag>
+	      <tns:Class>Person</tns:Class>
+	      <tns:SubClass>Contact</tns:SubClass>
+	    </tns:Tag>
+	  </tns:Acond>
+	  <tns:Qconds>
+	  	<tns:Qcond>
+	  	    <tns:RefNum>-1</tns:RefNum>
+	  	    <tns:Tag>
+	  	        <tns:Class>Phonecall</tns:Class>
+	  	        <tns:SubClass>Incoming</tns:SubClass>
+	  	    </tns:Tag>
+	  	</tns:Qcond>    
+	  </tns:Qconds>
+	  <tns:MetaInfo>
+	      <tns:Meta>
+	          <tns:Name>questionType</tns:Name>
+	          <tns:Value>name_list</tns:Value>
+	      </tns:Meta>
+	  </tns:MetaInfo>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
+		  <tns:QText>Name an app you used in the past (time:n hours).</tns:QText>
+		  <tns:Acond>
+		    <tns:Descriptions>
+		        <tns:Description>list</tns:Description>
+		        <tns:Description>anysubclass</tns:Description>
+		        <tns:Description>autocompl</tns:Description>
+		    </tns:Descriptions>
+		    <tns:Tag>
+		      <tns:Class>Application</tns:Class>
+		      <tns:SubClass>*</tns:SubClass>
+		    </tns:Tag>
+		  </tns:Acond>
+		  <tns:Qconds/>
+		  <tns:MetaInfo>
+		      <tns:Meta>
+		          <tns:Name>questionType</tns:Name>
+		          <tns:Value>name_list</tns:Value>
+		      </tns:Meta>
+		  </tns:MetaInfo>
+	 </tns:QAT>
+	 
+	 <tns:QAT>
+		 <tns:QText>Name a website you visited in the past (time:n hours). [format your answer as, e.g., google.com]</tns:QText>
+		 <tns:Acond>
+		   <tns:Descriptions>
+		       <tns:Description>list</tns:Description>
+		       <tns:Description>autocompl</tns:Description>
+		   </tns:Descriptions>
+		   <tns:Tag>
+		     <tns:Class>Internet</tns:Class>
+		     <tns:SubClass>Visited-Site-Url</tns:SubClass>
+		   </tns:Tag>
+		 </tns:Acond>
+		 <tns:Qconds/>
+		 <tns:MetaInfo>
+		     <tns:Meta>
+		         <tns:Name>questionType</tns:Name>
+		         <tns:Value>name_list</tns:Value>
+		     </tns:Meta>
+		 </tns:MetaInfo>
 	 </tns:QAT>
 </tns:QATs>

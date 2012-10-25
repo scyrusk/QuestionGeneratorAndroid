@@ -16,14 +16,19 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import android.util.Log;
+
 import flexjson.JSONDeserializer;
 import flexjson.JSONSerializer;
 
 public class UtilityFuncs {
+	public static final String DEBUG_TAG = "UtilityFuncs";
 	public static final int MS_PER_SEC = 1000;
 	public static final int SECS_PER_MIN = 60;
 	public static final int MINS_PER_HOUR = 60;
@@ -57,7 +62,16 @@ public class UtilityFuncs {
 		for (int i = 1; i < composite.length; i++) {
 			sb.append(glue + composite[i]);
 		}
-		Log.d("UtilityFuncs", sb.toString());
+		//Log.d("UtilityFuncs", sb.toString());
+		return sb.toString();
+	}
+	
+	public static String joinInCaluse(ArrayList<Long> composite) {
+		if (composite.size() <= 0) return "(-1)";
+		StringBuffer sb = new StringBuffer("(" + composite.get(0));
+		for (int i = 1; i < composite.size(); i++)
+			sb.append("," + composite.get(i));
+		sb.append(")");
 		return sb.toString();
 	}
 	
@@ -133,6 +147,25 @@ public class UtilityFuncs {
 		return sb.toString();
 	}
 	
+	public static TransmissionPacket makeTestPacket(DataWrapper.Fact f) {
+		HashMap<String,String> qs = new HashMap<String,String>();
+		qs.put("qid", "2");
+		qs.put("timestamp", f.getTimestamp());
+		qs.put("qatid","6");
+		ArrayList<HashMap<String,String>> answers = new ArrayList<HashMap<String,String>>();
+		HashMap<String,String> answer = new HashMap<String,String>();
+		answer.put("timestamp", f.getTimestamp());
+		answer.put("value", f.getTagAt(1).getSV());
+		answer.put("correct", "yes");
+		answer.put("tag_metas", UtilityFuncs.JSONify(f.getAllExcept(0)));
+		answers.add(answer);
+		HashMap<String,String> supp = new HashMap<String,String>();
+		supp.put("How easy was it for you to recall the answer to this question?", "5");
+		supp.put("How confident are you in your answer?", "5");
+		TransmissionPacket temp = new TransmissionPacket(0,"kash","Who what when where how at 11am?",qs,answers,"abc",supp,"now", 1000l, false);
+		temp.setTypeToDebug();
+		return temp;
+	}
 	public static void TestingFLEXJson(File filesDir) {
 		try {
 			HashMap<String,String> qs = new HashMap<String,String>();
@@ -157,8 +190,8 @@ public class UtilityFuncs {
 			ArrayList<TransmittablePacket> hi = new ArrayList<TransmittablePacket>();
 			hi.add(temp);
 			hi.add(us);
-			Log.d("UtilityFuncs", "Before:");
-			Log.d("UtilityFuncs", temp.toString());
+			//Log.d("UtilityFuncs", "Before:");
+			//Log.d("UtilityFuncs", temp.toString());
 			Writer writer = new BufferedWriter(new FileWriter(new File(filesDir,"temp.json")));
 		    new JSONSerializer().deepSerialize(hi,writer);
 		    writer.flush();
@@ -166,9 +199,9 @@ public class UtilityFuncs {
 		    Reader reader = new BufferedReader(new FileReader(new File(filesDir,"temp.json")));
 		    //Log.d("UtilityFuncs", "Serialized = " + s);
 		    ArrayList<TransmittablePacket> response = new JSONDeserializer<ArrayList<TransmittablePacket>>().deserialize(reader, ArrayList.class );
-		    Log.d("UtilityFuncs", response.size() + " transmission packets!");
-		    for (TransmittablePacket tp : response)
-		    	Log.d("UtilityFuncs", tp.toString());
+		    //Log.d("UtilityFuncs", response.size() + " transmission packets!");
+		    /*for (TransmittablePacket tp : response)
+		    	Log.d("UtilityFuncs", tp.toString());*/
 		 } catch (Exception e) {
 			 e.printStackTrace();
 		 }
@@ -186,18 +219,34 @@ public class UtilityFuncs {
 		return bin2hex(digest.digest(initial.getBytes()));
 	}
 	
+	public static double shannonEntropy(List<Long> values) {
+		HashMap<Long, Integer> ft = new HashMap<Long, Integer>();
+		for (Long l : values) {
+			int counter = (ft.containsKey(l) ? ft.get(l) : 0);
+			ft.put(l, counter + 1);
+		}
+		
+		double result = 0.0;
+		for (Long l : ft.keySet()) {
+			double PrX = ((double)ft.get(l))/values.size();
+			result += PrX*(Math.log10(PrX) / Math.log10(2));
+		}
+		
+		return -result;
+	}
+	
 	public static String bin2hex(byte[] data) {
 		return String.format("%0" + (data.length * 2) + 'x', new BigInteger(1, data));
 	}
 	
 	public static void dumpFileInfo(File f) {
-		Log.d("UtilityFuncs", "dumping file info");
+		//Log.d("UtilityFuncs", "dumping file info");
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(f));
 			String input = null;
-			while ((input = br.readLine()) != null) {
-				Log.d("UtilityFuncs", input);
-			}
+			/*while ((input = br.readLine()) != null) {
+				//Log.d("UtilityFuncs", input);
+			}*/
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -212,17 +261,154 @@ public class UtilityFuncs {
 				"www.", 
 				"m."
 		};
-		if (!url.startsWith("http://"))
+		if (!url.startsWith("http://") && !url.startsWith("https://"))
 			url = "http://" + url;
 		try {
 			url = new URL(url).getHost();
 		} catch (MalformedURLException e) {
-			Log.d("UtilityFuncs-getURLHost", "Unable to parse URL");
+			//Log.d("UtilityFuncs-getURLHost", "Unable to parse URL");
 		}
 		for (String pre : prefixes) {
 			if (url.startsWith(pre))
 				url = url.substring(pre.length());
 		}
 		return url;
+	}
+	
+	public static void quicksort(double[] main, int[] index) {
+	    quicksort(main, index, 0, index.length - 1);
+	}
+
+	// quicksort a[left] to a[right]
+	public static void quicksort(double[] a, int[] index, int left, int right) {
+	    if (right <= left) return;
+	    int i = partition(a, index, left, right);
+	    quicksort(a, index, left, i-1);
+	    quicksort(a, index, i+1, right);
+	}
+
+	// partition a[left] to a[right], assumes left < right
+	private static int partition(double[] a, int[] index, 
+	int left, int right) {
+	    int i = left - 1;
+	    int j = right;
+	    while (true) {
+	        while (less(a[++i], a[right]))      // find item on left to swap
+	            ;                               // a[right] acts as sentinel
+	        while (less(a[right], a[--j]))      // find item on right to swap
+	            if (j == left) break;           // don't go out-of-bounds
+	        if (i >= j) break;                  // check if pointers cross
+	        exch(a, index, i, j);               // swap two elements into place
+	    }
+	    exch(a, index, i, right);               // swap with partition element
+	    return i;
+	}
+
+	// is x < y ?
+	private static boolean less(double x, double y) {
+	    return (x < y);
+	}
+
+	// exchange a[i] and a[j]
+	private static void exch(double[] a, int[] index, int i, int j) {
+	    double swap = a[i];
+	    a[i] = a[j];
+	    a[j] = swap;
+	    int b = index[i];
+	    index[i] = index[j];
+	    index[j] = b;
+	}
+	
+	public static ArrayList<Integer> randomizeWithinEquivalence(ArrayList<Double> val) {
+		HashMap<Double, ArrayList<Integer>> equivalenceClasses = new HashMap<Double,ArrayList<Integer>>();
+		for (int i = 0; i < val.size(); i++) {
+			Double d = val.get(i);
+			ArrayList<Integer> allIndices = (equivalenceClasses.containsKey(d) ? 
+				equivalenceClasses.get(d) : 
+				new ArrayList<Integer>());
+			allIndices.add(i);
+			equivalenceClasses.put(d, allIndices);
+		}
+		ArrayList<Integer> retVal = new ArrayList<Integer>();
+		
+		Double[] uniqueVals = equivalenceClasses.keySet().toArray(new Double[equivalenceClasses.size()]);
+		Arrays.sort(uniqueVals);
+		for (Double d : uniqueVals) {
+			ArrayList<Integer> dIndices = equivalenceClasses.get(d);
+			Collections.shuffle(dIndices);
+			retVal.addAll(dIndices);
+		}
+		return retVal;
+	}
+	
+	public static ArrayList<Integer> randomizeWithinEquivalence(double[] val) {
+		HashMap<Double, ArrayList<Integer>> equivalenceClasses = new HashMap<Double,ArrayList<Integer>>();
+		for (int i = 0; i < val.length; i++) {
+			Double d = val[i];
+			ArrayList<Integer> allIndices = (equivalenceClasses.containsKey(d) ? 
+				equivalenceClasses.get(d) : 
+				new ArrayList<Integer>());
+			allIndices.add(i);
+			equivalenceClasses.put(d, allIndices);
+		}
+		ArrayList<Integer> retVal = new ArrayList<Integer>();
+		
+		Double[] uniqueVals = equivalenceClasses.keySet().toArray(new Double[equivalenceClasses.size()]);
+		Arrays.sort(uniqueVals);
+		for (Double d : uniqueVals) {
+			ArrayList<Integer> dIndices = equivalenceClasses.get(d);
+			Collections.shuffle(dIndices);
+			retVal.addAll(dIndices);
+		}
+		return retVal;
+	}
+	
+	public static Long[] sample(Long[] orig, int n) {
+		Collections.shuffle(Arrays.asList(orig));
+		Long[] retVal = new Long[(orig.length > n ? n : orig.length)];
+		for (int i = 0; i < retVal.length; i++) retVal[i] = orig[i];
+		return retVal;
+	}
+	
+	public static String JSONify(DataWrapper.Tag[] tags) {
+		StringBuilder sb = new StringBuilder("{");
+		if (tags.length > 0) {
+			sb.append("\"" + tags[0].getTC() + ":" + tags[0].getSC() + "\":\"" + tags[0].getSV() + "\"");
+			for (int i = 1; i < tags.length; i++) {
+				sb.append(",\"" + tags[i].getTC() + ":" + tags[i].getSC() + "\":\"" + tags[i].getSV() + "\"");
+			}
+		}
+		sb.append("}");
+		return sb.toString();
+	}
+	
+	public static boolean invalidTime(DataWrapper.Fact fact) {
+		//Log.d(DEBUG_TAG, fact.getTimestamp());
+		try {
+			int ts = Integer.parseInt(fact.getTimestamp().split(" ")[1].split(":")[0]);
+			//Log.d(DEBUG_TAG, ""+ts);
+			return ts >= 2 && ts <= 7;
+		} catch (Exception e) {
+			return true;
+		}
+	}
+	//yyyy-MM-dd kk:mm:ss
+	public static long getLongTimeForFact(DataWrapper.Fact fact) {
+		String ts = fact.getTimestamp();
+		String[] top_level = ts.split(" ");
+		try {
+			String[] ymd = top_level[0].split("-");
+			String[] hms = top_level[1].split(":");
+			Calendar cal = Calendar.getInstance();
+			cal.set(Calendar.YEAR, Integer.parseInt(ymd[0]));
+			cal.set(Calendar.MONTH, Integer.parseInt(ymd[1]));
+			cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(ymd[2]));
+			cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(hms[0]));
+			cal.set(Calendar.MINUTE, Integer.parseInt(hms[1]));
+			cal.set(Calendar.SECOND, Integer.parseInt(hms[2]));
+			return cal.getTimeInMillis();
+		} catch (Exception e) {
+			return -1l;
+		}
 	}
 }
