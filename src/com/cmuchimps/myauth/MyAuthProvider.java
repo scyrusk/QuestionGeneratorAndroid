@@ -22,7 +22,7 @@ public class MyAuthProvider extends ContentProvider {
 	private static final String METAS_BASE_PATH = "metas";
 	
 	public static final String[] FACTS_PROJECTION = { "sup" };
-	public static final String[] SUBSCRIPTIONS_PROJECTION = { };
+	public static final String[] SUBSCRIPTIONS_PROJECTION = { "subskey", "last_update" };
 	public static final int SUBSCRIPTIONS = 1;
 	public static final int SUBSCRIPTIONS_ID = 2;
 	public static final int SUBSCRIPTIONS_DUE = 3;
@@ -73,8 +73,10 @@ public class MyAuthProvider extends ContentProvider {
 		switch(uriType) {
 		case FACTS:
 			//separate tags and metas
-			String timestamp = values.getAsString("timestamp"), dayOfWeek = values.getAsString("dayOfWeek");
-			long _fact_id = mDbHelper.createFact(timestamp, dayOfWeek);
+			String timestamp = values.getAsString("timestamp"), 
+			       dayOfWeek = values.getAsString("dayOfWeek"),
+			       persistence = values.getAsString("persistence");
+			long _fact_id = mDbHelper.createFact(timestamp, dayOfWeek, persistence);
 			mNewUri = Uri.parse(FACTS_CONTENT_URI + "/" + _fact_id);
 			break;
 		case SUBSCRIPTIONS:
@@ -117,7 +119,7 @@ public class MyAuthProvider extends ContentProvider {
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
-		Log.d("MyAuthProvider", "Content provider query URI : " + uri.toString());
+		//Log.d("MyAuthProvider", "Content provider query URI : " + uri.toString());
 		int uriType = sURIMatcher.match(uri);
 		Cursor c = null;
 		
@@ -135,7 +137,7 @@ public class MyAuthProvider extends ContentProvider {
 			c = mDbHelper.fetchSubscription(Long.parseLong(uri.getLastPathSegment()), projection);
 			break;
 		case SUBSCRIPTIONS_DUE:
-			Log.d("MyAuthProvider", "MyAuthProvider::fetching due subscriptions from query method");
+			//Log.d("MyAuthProvider", "MyAuthProvider::fetching due subscriptions from query method");
 			c = mDbHelper.fetchDueSubscriptions();
 			break;
 		default:

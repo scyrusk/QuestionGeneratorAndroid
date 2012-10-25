@@ -15,7 +15,7 @@ public class NotificationReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		// TODO Auto-generated method stub
-		Log.d("NotificationReceiver","Attempting to set notification");
+		//Log.d("NotificationReceiver","Attempting to set notification");
 		NotificationManager nm = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
 		Notification note = new Notification(R.drawable.authentication, "Answer questions about your day", 
 				System.currentTimeMillis());

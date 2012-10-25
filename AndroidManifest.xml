@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.cmuchimps.myauth"
-    android:versionCode="1"
-    android:versionName="1.0" >
+    android:versionCode="8"
+    android:versionName="RubyWeapon" >
 
     <uses-sdk android:minSdkVersion="10" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
@@ -63,6 +63,8 @@
         	android:name=".KnowledgeTranslatorWrapper"></service>
         <service
         	android:name=".UploaderService"></service>
+        <service
+        	android:name=".CullOldDBEntriesService"></service>
         <receiver
     		android:name=".SubscriptionReceiver"
     		android:enabled="true"></receiver>
@@ -72,6 +74,9 @@
         <receiver
     		android:name=".NotificationReceiver"
     		android:enabled="true"></receiver>
+        <receiver
+            android:name=".LocationChangedReceiver"
+            android:enabled="true"></receiver>
     	<receiver android:name=".BootReceiver">
         <intent-filter>
             <action android:name="android.intent.action.BOOT_COMPLETED" />

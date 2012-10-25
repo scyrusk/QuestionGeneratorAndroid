@@ -32,7 +32,7 @@ public class UploaderService extends Service {
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.d("UploaderService","Beginning to start service to upload packets...");
+		//Log.d("UploaderService","Beginning to start service to upload packets...");
 		ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
 		PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "UploaderServiceWakeLock");
@@ -52,11 +52,11 @@ public class UploaderService extends Service {
 		@Override
 		protected Void doInBackground(ServerCommunicator... params) {
 			try {
-				Log.d("UploaderTask","Entered uploader task...sending packets");
+				//Log.d("UploaderTask","Entered uploader task...sending packets");
 				params[0].sendQueuedPackets();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				Log.d("UploaderService", "Exception in background uploader task");
+				//Log.d("UploaderService", "Exception in background uploader task");
 				e.printStackTrace();
 			}
 			return null;

@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import android.util.Log;
-
 public class DataWrapper {
 	private KBDbAdapter mDbHelper;
 	
@@ -84,6 +82,7 @@ public class DataWrapper {
 	 *
 	 */
 	public class Fact extends Component {
+		private String persistence;
 		private String queried;
 		private String timestamp;
 		private String dayOfWeek;
@@ -94,14 +93,14 @@ public class DataWrapper {
 		private Long[] tag_indices; //lazy evaluation for memory efficieny
 		
 		public Fact() {
-			initialize(-1, "", "", new Long[0], new Long[0], "");
+			initialize(-1, "", "", new Long[0], new Long[0], "", "");
 		}
 		
-		public Fact(long id, String ts, String dow, Long[] mi, Long[] ti, String q) {
-			initialize(id, ts, dow, mi, ti, q);
+		public Fact(long id, String ts, String dow, Long[] mi, Long[] ti, String q, String p) {
+			initialize(id, ts, dow, mi, ti, q, p);
 		}
 		
-		private void initialize(long id,String ts, String dow, Long[] mi, Long[] ti, String q) {
+		private void initialize(long id,String ts, String dow, Long[] mi, Long[] ti, String q, String p) {
 			_id = id;
 			timestamp = ts;
 			dayOfWeek = dow;
@@ -112,8 +111,10 @@ public class DataWrapper {
 			metas = new Meta[mi.length];
 			tags = new Tag[ti.length];
 			queried = q;
+			persistence = p;
 		}
 		
+		public String getPersistence() { return persistence; }
 		public String getTimestamp() { return timestamp; }
 		public String getDayOfWeek() { return dayOfWeek; }
 		public boolean getQueried() { return mDbHelper.isFactQueried(_id); }
@@ -136,6 +137,19 @@ public class DataWrapper {
 			for (Long l : tag_indices) 
 				if (tags[counter++] == null) tags[counter - 1] = mDbHelper.getTag(l);
 			return tags;
+		}
+		
+		public Tag[] getAllExcept(int index) {
+			ArrayList<Tag> retVal = new ArrayList<Tag>();
+			Tag[] all = getAllTags();
+			for (int i = 0; i < all.length; i++) {
+				if (i == index) continue;
+				Tag curr = all[i];
+				if (curr.getTC().equalsIgnoreCase("Person") &&
+					curr.getSC().equalsIgnoreCase("User")) continue;
+				retVal.add(curr);
+			}
+			return retVal.toArray(new Tag[retVal.size()]);
 		}
 		
 		public Tag getTagAt(int index) {
@@ -202,6 +216,7 @@ public class DataWrapper {
 			retVal.append(compiled + "\tTimestamp: " + this.timestamp + "\n");
 			retVal.append(compiled + "\tDay Of Week: " + this.dayOfWeek + "\n");
 			retVal.append(compiled + "\tQueried: " + this.queried + "\n");
+			retVal.append(compiled + "\tPersistence: " + this.persistence + "\n");
 			if (metas.length > 0) {
 				retVal.append(compiled + "\tMetas:\n");
 				Meta[] temp = getAllMetas();
@@ -368,6 +383,8 @@ public class DataWrapper {
 		private Long[] qcond_indices;
 		private Long[] meta_indices;
 		
+		private Tag[] allTags;
+		
 		public QAT() {
 			initialize(-1, "", -1, new Long[0], new Long[0]);	
 		}
@@ -389,6 +406,54 @@ public class DataWrapper {
 			metas = new Meta[mi.length];
 		}
 		
+		public Tag[] getAllTags() {
+			ArrayList<Tag> tags = new ArrayList<Tag>();
+			for (Qcond qcond : getAllQconds()) {
+				for (Tag t : qcond.getAllTags())
+					tags.add(t);
+			}
+
+			for (Tag t : getAcond().getAllTags())
+				tags.add(t);
+			
+			return tags.toArray(new Tag[tags.size()]);
+		}
+		
+		public String getAnswerType() {
+			Acond tmp = getAcond();
+			return tmp.getTagAt(0).getTC() + ":" + tmp.getTagAt(0).getSC();
+		}
+		
+		public String[] getAllTCs() {
+			if (allTags == null) allTags = getAllTags();
+			String[] retVal = new String[allTags.length];
+			int counter = 0;
+			for (Tag t : allTags) 
+				retVal[counter++] = t.getTC();
+			return retVal;
+		}
+		
+		public String[] getAllSCs() {
+			if (allTags == null) allTags = getAllTags();
+			String[] retVal = new String[allTags.length];
+			int counter = 0;
+			for (Tag t : allTags) 
+				retVal[counter++] = t.getSC();
+			return retVal;
+		}
+		
+		public String[] getAllSVs() {
+			if (allTags == null) allTags = getAllTags();
+			String[] retVal = new String[allTags.length];
+			int counter = 0;
+			for (Tag t : allTags) {
+				String tmp = t.getSV();
+				if (tmp == null || tmp.equalsIgnoreCase("")) tmp="*";
+				retVal[counter++] = tmp;
+			}
+			return retVal;
+		}
+		
 		public String getQText() { return qtext; }
 		
 		public Acond getAcond() {
@@ -397,7 +462,7 @@ public class DataWrapper {
 		}
 		
 		public Qcond getQcondAt(int index) {
-			Log.d("DataWrapper", "Fetching Qcond at: " + index + ", which corresponds to DB qcond at : " + qcond_indices[index]);
+			//Log.d("DataWrapper", "Fetching Qcond at: " + index + ", which corresponds to DB qcond at : " + qcond_indices[index]);
 			if (index >= qcond_indices.length) return null;
 			if (qconds[index] == null) qconds[index] = mDbHelper.getQcond(qcond_indices[index]);
 			return qconds[index];
@@ -424,12 +489,12 @@ public class DataWrapper {
 		}
 		
 		/**
-		 * Matches a question answer template to a fact. Untested!
+		 * Matches a question answer template to a fact.
 		 * @param fact
 		 * @return
 		 */
 		public Integer[] matches(Fact fact) {
-			Log.d("DataWrapper", "Qtext = " + qtext);
+			//Log.d("DataWrapper", "Qtext = " + qtext);
 			HashMap<String,HashMap<String,Integer>> tagCounter = fact.createTagCounter();
 			//match all possible qconds/aconds with one possible instantiation right away
 			//match flexible ones using dynamic programming
@@ -456,7 +521,7 @@ public class DataWrapper {
 			for (int i = 0; i < qatbyfact.length; i++) {
 				Integer[] matchingIdxs = UtilityFuncs.getMatches(qatbyfact[i]);
 				if (matchingIdxs.length == 0) {
-					Log.d("DataWrapper", "(" + i + "): No matching tag for " + (i == 0 ? getAcond().toString(0) : getQcondAt(i-1).toString(0)));
+					//Log.d("DataWrapper", "(" + i + "): No matching tag for " + (i == 0 ? getAcond().toString(0) : getQcondAt(i-1).toString(0)));
 					return null; //no matches found
 				} else if (matchingIdxs.length == 1) { //exactly one match found, must set to this
 					//decrement tag counter
@@ -511,7 +576,7 @@ public class DataWrapper {
 				if (currentRow == keys.length) return matches;
 			}
 			
-			Log.d("DataWrapper", "No matches found..no matches for mults");
+			//Log.d("DataWrapper", "No matches found..no matches for mults");
 			return null;
 		}
 		

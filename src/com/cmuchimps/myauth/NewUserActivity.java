@@ -78,7 +78,7 @@ public class NewUserActivity extends Activity {
 					return;
 				}
 				if (mAge < 18 || mAge > 99) {
-					Toast.makeText(getApplicationContext(), "Sorry, participants in this study must be at least 18.", Toast.LENGTH_SHORT).show();
+					Toast.makeText(getApplicationContext(), "Sorry, participants in this study must be at least 18 and below 99.", Toast.LENGTH_SHORT).show();
 					return;
 				}
 				

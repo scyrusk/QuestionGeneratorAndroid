@@ -159,8 +159,8 @@ public class DebugActivity extends Activity {
     	} else {
     		try {
 				mUser = User.load(getFilesDir());
-				Log.d("DebugActivity", "User:");
-				Log.d("DebugActivity", mUser.toString());
+				//Log.d("DebugActivity", "User:");
+				//Log.d("DebugActivity", mUser.toString());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -182,8 +182,8 @@ public class DebugActivity extends Activity {
     	} else {
     		try {
 				mUser = User.load(getFilesDir());
-				Log.d("DebugActivity", "User:");
-				Log.d("DebugActivity", mUser.toString());
+				//Log.d("DebugActivity", "User:");
+				//Log.d("DebugActivity", mUser.toString());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -229,9 +229,9 @@ public class DebugActivity extends Activity {
 				//create fact about location here
 				//2 tags: person:User was at location:Towers=
 				//also get Timestamp and day of week
-				Log.d("DebugActivity", "Location changed event has triggered for some reason.");
+				//Log.d("DebugActivity", "Location changed event has triggered for some reason.");
 				if (System.currentTimeMillis() > mDbHelper.getSubscriptionDueTimeFor("Location")) {
-					Log.d("DebugActivity", "adding location fact from location listener");
+					//Log.d("DebugActivity", "adding location fact from location listener");
 					String timestamp, dayOfWeek;
 					ArrayList<HashMap<String,String>> tags = new ArrayList<HashMap<String,String>>(),metas = new ArrayList<HashMap<String,String>>();
 					Date date = new Date(location.getTime());
@@ -262,7 +262,7 @@ public class DebugActivity extends Activity {
 					tags.add(curr);
 					//TODO: Should we do reverse geocoding here? Who knows.
 					//no metas for now
-					mDbHelper.createFact(timestamp, dayOfWeek, tags, metas);
+					mDbHelper.createFact(timestamp, dayOfWeek, "dynamic", tags, metas);
 					mDbHelper.updateSubscriptionTime("Location", location.getTime());
 				}
 			}
@@ -305,16 +305,16 @@ public class DebugActivity extends Activity {
     }
     
     private void printFacts(Long[] facts) {
-    	Log.d("DebugActivity", "ALL FACTS:\n");
+    	//Log.d("DebugActivity", "ALL FACTS:\n");
         for (Long l : facts) {
-        	Log.d("DebugActivity", mDbHelper.getFact(l).toString());
+        	//Log.d("DebugActivity", mDbHelper.getFact(l).toString());
         }
     }
     
     private void printQATS(Long[] qats) {
-        Log.d("DebugActivity", "ALL QATS:\n");
+        //Log.d("DebugActivity", "ALL QATS:\n");
         for (Long l : qats) { 
-        	Log.d("DebugActivity", mDbHelper.getQAT(l).toString());
+        	//Log.d("DebugActivity", mDbHelper.getQAT(l).toString());
         }
     }
     
@@ -344,7 +344,7 @@ public class DebugActivity extends Activity {
 			BufferedReader br = new BufferedReader(new InputStreamReader(file));
 			String input;
 			while ((input = br.readLine()) != null) {
-				if (this.mDbHelper == null) Log.d("DebugActivity", "mDbHelper is null?");
+				//if (this.mDbHelper == null) Log.d("DebugActivity", "mDbHelper is null?");
 				this.mDbHelper.createTagClass(input.replace("\n", ""));
 			}
 		} catch (FileNotFoundException e) {
@@ -388,7 +388,7 @@ public class DebugActivity extends Activity {
      * Mainly for testing purposes. Manually starts intent to update all subscriptions, regardless of whether or not they are due.
      */
     private void forcePollSubscriptions() {
-    	Log.d("DebugActivity", "Entering force poll subscriptions...");
+    	//Log.d("DebugActivity", "Entering force poll subscriptions...");
     	/*Cursor c = mDbHelper.fetchAllSubscriptions(new String[] { "subskey", "class_name", "last_update", "poll_interval"}, null, null, null);
     	//Log.d("DebugActivity", "Current time millis: " + System.currentTimeMillis());
     	if (c.getCount() > 0) {
@@ -423,10 +423,10 @@ public class DebugActivity extends Activity {
 					if (!(Modifier.isStatic(c.getModifiers()) || Modifier.isAbstract(c.getModifiers()))) {
 						KnowledgeSubscription ks = (KnowledgeSubscription) c.getDeclaredConstructor(new Class[] { KnowledgeTranslatorWrapper.class }).newInstance(new Object[] { this.ktw });
 						c.getMethod("poll", null).invoke(ks, null);
-						Log.d("DebugActivity", "Successfully polled " + SensorSubscriptions[i] + "KnowledgeSubscription!");
+						//Log.d("DebugActivity", "Successfully polled " + SensorSubscriptions[i] + "KnowledgeSubscription!");
 					}
 				} catch (Throwable e) {
-					Log.d("DebugActivity", "Failed to update class " + SensorSubscriptions[i]);
+					//Log.d("DebugActivity", "Failed to update class " + SensorSubscriptions[i]);
 					e.printStackTrace();
 				}
 			}

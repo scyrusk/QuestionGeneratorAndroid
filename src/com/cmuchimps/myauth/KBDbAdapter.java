@@ -53,7 +53,8 @@ public class KBDbAdapter {
 			"create table " + FACTS_TABLE + " (_id integer primary key autoincrement, "
 			+ "timestamp date, "
 			+ "dayOfWeek string, " 
-			+ "queried string);";
+			+ "queried string, "
+			+ "persistence string);";
 	
 	
 	private static final String DESCRIPTIONS_CREATE = 
@@ -109,8 +110,8 @@ public class KBDbAdapter {
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 			// TODO Auto-generated method stub
-			Log.w(LOG_TAG, "Upgrading database from version " + oldVersion + " to "
-                    + newVersion + ", which will destroy all old data");
+			/*Log.w(LOG_TAG, "Upgrading database from version " + oldVersion + " to "
+                    + newVersion + ", which will destroy all old data");*/
 			for (String s : TABLES) {
 				db.execSQL("DROP TABLE IF EXISTS " + s);
 			}
@@ -155,7 +156,7 @@ public class KBDbAdapter {
      * @param name
      * @return
      */
-    public long createTagClass(String name) {
+    public synchronized long createTagClass(String name) {
     	ContentValues initialValues = new ContentValues();
     	initialValues.put("name", name); //put the name variable in the "name" column
     	return mDb.insert(TAG_CLASS_TABLE, null, initialValues);
@@ -166,7 +167,7 @@ public class KBDbAdapter {
      * @param name
      * @return
      */
-    public long findTagClassByName(String name) {
+    public synchronized long findTagClassByName(String name) {
     	Cursor c = mDb.query(TAG_CLASS_TABLE, new String[] {KEY_ROWID, "name"}, "name='"+name+"'", null, null, null, null);
     	if (c.getCount() > 0) {
     		c.moveToFirst();
@@ -178,7 +179,7 @@ public class KBDbAdapter {
     	return -1;
     }
     
-    public long returnTagNumbers(String name) {
+    public synchronized long returnTagNumbers(String name) {
     	Cursor c = mDb.query(TAG_CLASS_TABLE, new String[] {KEY_ROWID, "name"}, "name='"+name+"'", null, null, null, null);
     	int retVal = c.getCount();
     	c.close();
@@ -190,7 +191,7 @@ public class KBDbAdapter {
      * @param rowId
      * @return
      */
-    public boolean deleteTagClass(long rowId) {
+    public synchronized boolean deleteTagClass(long rowId) {
     	return mDb.delete(TAG_CLASS_TABLE, KEY_ROWID + "=" + rowId, null) > 0;
     }
     
@@ -200,7 +201,7 @@ public class KBDbAdapter {
      * @param name
      * @return
      */
-    public boolean updateTagClass(long rowId, String name) {
+    public synchronized boolean updateTagClass(long rowId, String name) {
     	ContentValues args = new ContentValues();
     	args.put("name", name);
     	
@@ -211,11 +212,11 @@ public class KBDbAdapter {
      * 
      * @return
      */
-    public Cursor fetchAllTagClasses() {
+    public synchronized Cursor fetchAllTagClasses() {
     	return mDb.query(TAG_CLASS_TABLE, new String[] {KEY_ROWID, "name"}, null, null, null, null, null);
     }
     
-    public long createFact(String timestamp, String dayOfWeek) {
+    public synchronized long createFact(String timestamp, String dayOfWeek) {
     	ContentValues fact_vals = new ContentValues();
     	fact_vals.put("timestamp", UtilityFuncs.join(timestamp.split("T"), " "));
     	fact_vals.put("dayOfWeek", dayOfWeek);
@@ -223,14 +224,30 @@ public class KBDbAdapter {
     	return mDb.insert(FACTS_TABLE, null, fact_vals);
     }
     
-    public boolean registerFactAsQueried(long rowId) {
+    public synchronized long createFact(String timestamp, String dayOfWeek, String persistence) {
+    	ContentValues fact_vals = new ContentValues();
+    	fact_vals.put("timestamp", UtilityFuncs.join(timestamp.split("T"), " "));
+    	fact_vals.put("dayOfWeek", dayOfWeek);
+    	fact_vals.put("persistence", persistence);
+    	fact_vals.put("queried", "false");
+    	return mDb.insert(FACTS_TABLE, null, fact_vals);
+    }
+    
+    public synchronized boolean registerFactAsQueried(long rowId) {
     	ContentValues args = new ContentValues();
     	args.put("queried", "true");
-    	Log.d("KBDbAdapter", "registering fact with id " + rowId + " as queried");
+    	//Log.d("KBDbAdapter", "registering fact with id " + rowId + " as queried");
     	return mDb.update(FACTS_TABLE, args, KEY_ROWID + "=" + rowId, null) > 0;
     }
     
-    public boolean isFactQueried(long rowId) {
+    public synchronized int registerFactsAsQueried(ArrayList<Long> rowIds) {
+    	if (rowIds.size() <= 0) return 0;
+    	ContentValues args = new ContentValues();
+    	args.put("queried", "true");
+    	return mDb.update(FACTS_TABLE, args, KEY_ROWID + " in " + UtilityFuncs.joinInCaluse(rowIds), null);
+    }
+    
+    public synchronized boolean isFactQueried(long rowId) {
     	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "queried" }, 
     			KEY_ROWID + "=" + rowId, null, null, null, null);
     	if (c.getCount() > 0) {
@@ -243,7 +260,7 @@ public class KBDbAdapter {
     	return false;
     }
     
-    public Long[] getFactsWithNullQueried() {
+    public synchronized Long[] getFactsWithNullQueried() {
     	ArrayList<Long> retVal = new ArrayList<Long>();
     	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID }, 
     			"queried is null", null, null, null, null);
@@ -258,10 +275,11 @@ public class KBDbAdapter {
     	return retVal.toArray(new Long[retVal.size()]);
     }
     
-    public void cullOldFacts(String timestamp, int thresholdDays) {
+    public synchronized void cullOldFacts(String timestamp, int thresholdDays) {
     	String pivotTime = (timestamp.equalsIgnoreCase("*") ? "'now'" : "'" + timestamp + "'");
-    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID }, "timestamp < datetime(" + pivotTime + ",'-" + thresholdDays + " days')", null, null, null, null);
-    	Log.d("KBDbAdapter", "Culling " + c.getCount() + " fact(s)");
+    	String query = "timestamp < datetime(" + pivotTime + ",'-" + thresholdDays + " days') AND persistence = 'dynamic'";
+    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID }, query, null, null, null, null);
+    	//Log.d("myAuth", "Culling " + c.getCount() + " fact(s)");
     	if (c.getCount() > 0) {
     		c.moveToFirst();
     		while (!c.isAfterLast()) {
@@ -270,9 +288,10 @@ public class KBDbAdapter {
     		}
     	}
     	c.close();
+    	//Log.d("myAuth", "Done culling.");
     }
     
-    public long createTag(String tag_class,String subclass,String subvalue,String idtype,long idval) {
+    public synchronized long createTag(String tag_class,String subclass,String subvalue,String idtype,long idval) {
     	ContentValues tag_vals = new ContentValues();
     	long tagclass_id = this.findTagClassByName(tag_class);
 		if (tagclass_id >= 0) 
@@ -288,7 +307,7 @@ public class KBDbAdapter {
     	return mDb.insert(TAGS_TABLE, null, tag_vals);
     }
     
-    public long createMeta(String name, String value, String idtype, long idval) {
+    public synchronized long createMeta(String name, String value, String idtype, long idval) {
     	ContentValues meta_values = new ContentValues();
     	meta_values.put("name", name);
     	if (value != null) meta_values.put("value", value);
@@ -298,12 +317,13 @@ public class KBDbAdapter {
     	return mDb.insert(META_TABLE, null, meta_values);
     }
     
-    public long createFact(String timestamp, String dayOfWeek, ArrayList<HashMap<String,String>> tags, ArrayList<HashMap<String,String>> metas) {
+    public synchronized long createFact(String timestamp, String dayOfWeek, String persistence, ArrayList<HashMap<String,String>> tags, ArrayList<HashMap<String,String>> metas) {
     	/* Insert fact */
     	ContentValues fact_vals = new ContentValues();
     	fact_vals.put("timestamp", UtilityFuncs.join(timestamp.split("T"), " "));
     	fact_vals.put("dayOfWeek", dayOfWeek);
     	fact_vals.put("queried", "false");
+    	fact_vals.put("persistence", persistence);
     	long fact_id = mDb.insert(FACTS_TABLE, null, fact_vals);
     	
     	if (fact_id < 0)
@@ -356,7 +376,7 @@ public class KBDbAdapter {
      * @param subvalues
      * @return
      */
-    public Long[] findAllFactsWithTags(String[] tags, String[] subclasses, String[] subvalues) {
+    public synchronized Long[] findAllFactsWithTags(String[] tags, String[] subclasses, String[] subvalues) {
     	if (tags.length != subclasses.length && subvalues.length != tags.length)
     		return new Long[0];
     	long[] tag_class_ids = new long[tags.length];
@@ -379,9 +399,19 @@ public class KBDbAdapter {
     			if (!subvalues[index].equalsIgnoreCase("*")) 
     				selectionQuery.append(" AND subvalue = '" + subvalues[index] + "'");
     		}
+    		// selectionQuery.append(" AND persistence = '" + persistence + "'");
     		Cursor c = mDb.query(TAGS_TABLE, 
     				new String[] { KEY_ROWID, "tag_classid", "subclass", "subvalue", "factsid" }, 
         			selectionQuery.toString(), null, null, null, null);
+    		
+    		/*StringBuffer q = new StringBuffer();
+    		q.append("SELECT a." + KEY_ROWID + ", a.tag_classid, a.subclass, a.subvalue, a.factsid ");
+    		q.append("FROM " + TAGS_TABLE + " a JOIN " + FACTS_TABLE + " b ON ");
+    		q.append("a.factsid = b." + KEY_ROWID + " AND b.persistence = '" + persistence + "' AND ");
+    		q.append(selectionQuery.toString());*/
+    		//System.out.println(q.toString());
+    		
+    		//Cursor c = mDb.rawQuery(q.toString(), null);
     		if (c != null && c.getCount() > 0) {
     			HashSet<Long> queryResult = new HashSet<Long>();
     			c.moveToFirst();
@@ -389,9 +419,9 @@ public class KBDbAdapter {
     				queryResult.add(c.getLong(c.getColumnIndex("factsid")));
     				c.moveToNext();
     			}
-    			c.close();
     			queryResults.add(queryResult);
     		}
+    		if (c != null) c.close();
     	}
     	
     	// If no valid results, then return nothing
@@ -404,28 +434,90 @@ public class KBDbAdapter {
     	
     	return cum.toArray(new Long[cum.size()]);
     }
+    
+    public synchronized Long[] getAllQatsWithMeta(String meta_key, String meta_value) {
+    	String selection = "name = '" + meta_key + "' AND value = '" + meta_value + "' AND qatid IS NOT NULL";
+    	Cursor c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "name", "value", "qatid" }, selection, null, null, null, null);
+    	
+    	if (c != null && c.getCount() > 0) {
+    		Long[] retVal = new Long[c.getCount()];
+    		int counter = 0;
+    		c.moveToFirst();
+    		while (!c.isAfterLast()) {
+    			retVal[counter++] = c.getLong(c.getColumnIndex("qatid"));
+    			c.moveToNext();
+    		}
+    		return retVal;
+    	}
+    	if (c != null) c.close();
+    	
+    	return new Long[0];
+    }
+    
+    public synchronized Long[] findAllFactsWithTagsWithinTime(String[] tags, String[] subclasses, 
+    		String[] subvalues, long ellapsedTimeMillis, String persistence) {
+    	Long[] tagFacts = findAllFactsWithTags(tags, subclasses, subvalues);
+    	Long[] timeFacts = getFilteredFactsByTime(ellapsedTimeMillis, "*", persistence);
+    	//Log.d("fafwt", "tag: "+ tagFacts.length);
+    	//Log.d("fafwt", "time: "+ timeFacts.length);
+    	HashSet<Long> tagFactsSet = new HashSet<Long>();
+    	HashSet<Long> timeFactsSet = new HashSet<Long>();
+    	int max = Math.max(tagFacts.length, timeFacts.length);
+    	for (int i = 0; i < max; i++) {
+    		if (i < tagFacts.length) tagFactsSet.add(tagFacts[i]);
+    		if (i < timeFacts.length) timeFactsSet.add(timeFacts[i]);
+    	}
+    	tagFactsSet.retainAll(timeFactsSet);
+    	//Log.d("fafwt", "intersect: " + tagFactsSet.size());
+    	return tagFactsSet.toArray(new Long[tagFactsSet.size()]);
+    }
+    
+    
+    public synchronized Long[] intersectFactsWithPersistence(Long[] original, String persistence) {
+    	Cursor c = mDb.query(FACTS_TABLE, 
+    			new String[] { KEY_ROWID, "persistence" }, 
+    			"persistence = '" + persistence +"'", null, null, null, null);
+    	HashSet<Long> origSet = new HashSet<Long>();
+    	for (Long l : original) origSet.add(l);
+    	HashSet<Long> persistSet = new HashSet<Long>();
+    	if (c != null && c.getCount() > 0) {
+    		c.moveToFirst();
+    		while (!c.isAfterLast()) {
+    			persistSet.add(c.getLong(c.getColumnIndex(KEY_ROWID)));
+    			c.moveToNext();
+    		}
+    	}
+    	if (c != null) c.close();
+    	origSet.retainAll(persistSet);
+    	return origSet.toArray(new Long[origSet.size()]);
+    }
+    
     /**
      * 
      * @param rowId
      * @return
      */
-    public boolean deleteFact(long rowId) {
+    public synchronized boolean deleteFact(long rowId) {
     	//TODO: delete all tags/metas associated with this fact
-    	mDb.delete(TAGS_TABLE, "factsid=" + rowId, null);
+    	int val = 0;
+		if (mDb.isDbLockedByCurrentThread()) return false;
+		mDb.delete(TAGS_TABLE, "factsid=" + rowId, null);
     	mDb.delete(META_TABLE, "factsid=" + rowId, null);
+    		
+    	val = mDb.delete(FACTS_TABLE, KEY_ROWID + "=" + rowId, null);
     	
-    	return mDb.delete(FACTS_TABLE, KEY_ROWID + "=" + rowId, null) > 0;
+    	return val > 0;
     }
     
     /**
      * 
      * @return
      */
-    public Cursor fetchAllFacts(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    public synchronized Cursor fetchAllFacts(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
     	return mDb.query(FACTS_TABLE, projection, selection, selectionArgs, null, null, sortOrder);
     }
     
-    public Cursor fetchFact(long row_id, String[] projection) {
+    public synchronized Cursor fetchFact(long row_id, String[] projection) {
     	return mDb.query(FACTS_TABLE, projection, KEY_ROWID + "=" + row_id, null, null, null, null);
     }
     
@@ -436,7 +528,7 @@ public class KBDbAdapter {
      * @param metas
      * @return
      */
-    public long createQAT(String qtext, ArrayList<HashMap<String,String>> metas) {
+    public synchronized long createQAT(String qtext, ArrayList<HashMap<String,String>> metas) {
     	ContentValues qat_vals = new ContentValues();
     	qat_vals.put("qtext", qtext);
     	long qat_id = mDb.insert(QAT_TABLE, null, qat_vals);
@@ -460,7 +552,7 @@ public class KBDbAdapter {
      * @param rowId
      * @return
      */
-    public boolean deleteQAT(long rowId) {
+    public synchronized boolean deleteQAT(long rowId) {
     	//delete all Aconds, Qconds, Metas, and then QAT
     	//for Aconds/Qconds, need to do recursively because they are complex
     	
@@ -490,7 +582,7 @@ public class KBDbAdapter {
      * 
      * @return
      */
-    public Cursor fetchAllQATs() {
+    public synchronized Cursor fetchAllQATs() {
     	return mDb.query(QAT_TABLE, new String[] {KEY_ROWID,"qtext"}, null, null, null, null, null);
     }
     
@@ -509,7 +601,7 @@ public class KBDbAdapter {
      * @param tags
      * @return
      */
-    public long createAcond(long qatid, ArrayList<String> descs, ArrayList<HashMap<String,String>> tags) {
+    public synchronized long createAcond(long qatid, ArrayList<String> descs, ArrayList<HashMap<String,String>> tags) {
     	ContentValues vals = new ContentValues();
     	vals.put("qatid", qatid);
     	long acond_id = mDb.insert(ACOND_TABLE,null,vals);
@@ -545,7 +637,7 @@ public class KBDbAdapter {
      * @param rowId
      * @return
      */
-    public int deleteAcond(long rowId) {
+    public synchronized int deleteAcond(long rowId) {
     	//TODO: delete all descriptions referring to Acond, then Tags, then Acond
     	mDb.delete(DESCRIPTIONS_TABLE, "acondsid=" + rowId, null);
     	mDb.delete(TAGS_TABLE, "acondsid=" + rowId, null);
@@ -559,7 +651,7 @@ public class KBDbAdapter {
      * @param tags
      * @return
      */
-    public long createQcond(long qatid, int refnum, ArrayList<HashMap<String,String>> tags) {
+    public synchronized long createQcond(long qatid, int refnum, ArrayList<HashMap<String,String>> tags) {
     	ContentValues vals = new ContentValues();
     	vals.put("qatid", qatid);
     	vals.put("refnum", refnum);
@@ -588,14 +680,14 @@ public class KBDbAdapter {
      * @param rowId
      * @return
      */
-    public long deleteQcond(long rowId) {
+    public synchronized long deleteQcond(long rowId) {
     	//TODO delete all tags referring to Qcond, then delete Qcond
     	mDb.delete(TAGS_TABLE, "qcondsid="+rowId, null);
     	return mDb.delete(QCOND_TABLE, KEY_ROWID+"="+rowId, null);
     }
     
     
-    public long createSubscription(String subskey,long poll_interval,long last_update,String class_name) {
+    public synchronized long createSubscription(String subskey,long poll_interval,long last_update,String class_name) {
     	ContentValues vals = new ContentValues();
     	vals.put("subskey",subskey);
     	vals.put("poll_interval", poll_interval);
@@ -604,15 +696,15 @@ public class KBDbAdapter {
     	return mDb.insert(SUBSCRIPTIONS_TABLE,null,vals);
     }
     
-    public int deleteSubscription(long rowId) {
+    public synchronized int deleteSubscription(long rowId) {
     	return mDb.delete(SUBSCRIPTIONS_TABLE, KEY_ROWID + "=" + rowId, null);
     }
     
-    public int deleteSubscription(String subskey) {
+    public synchronized int deleteSubscription(String subskey) {
     	return mDb.delete(SUBSCRIPTIONS_TABLE, "subskey='" + subskey + "'", null);
     }
     
-    public HashMap<String,String> getAllSubscriptions() {
+    public synchronized HashMap<String,String> getAllSubscriptions() {
     	HashMap<String,String> subs = new HashMap<String,String>();
     	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { KEY_ROWID, "subskey", "class_name" }, null, null, null, null, null);
     	c.moveToFirst();
@@ -624,11 +716,11 @@ public class KBDbAdapter {
     	return subs;
     }
     
-    public int getNumSubscriptions() {
+    public synchronized int getNumSubscriptions() {
     	return mDb.query(SUBSCRIPTIONS_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null).getCount();
     }
     
-    public String getSubscriptionClassFor(String subskey) {
+    public synchronized String getSubscriptionClassFor(String subskey) {
     	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "class_name" }, "subskey='" + subskey + "'", null, null, null, null);
     	if (c.getCount() == 0) {
     		c.close();
@@ -639,13 +731,13 @@ public class KBDbAdapter {
     	return retVal;
     }
     
-    public int updateSubscriptionTime(String subskey,long last_update) {
+    public synchronized int updateSubscriptionTime(String subskey,long last_update) {
 		ContentValues vals = new ContentValues();
 		vals.put("last_update", last_update);
 		return mDb.update(SUBSCRIPTIONS_TABLE, vals, "subskey='"+subskey+"'", null);
     }
     
-    public HashMap<String,String> getAllDueSubscriptions() {
+    public synchronized HashMap<String,String> getAllDueSubscriptions() {
     	HashMap<String,String> subs = new HashMap<String,String>();
     	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { KEY_ROWID, "subskey", "class_name", "last_update", "poll_interval"}, "last_update + poll_interval <= " + System.currentTimeMillis(), null, null, null, null);
     	c.moveToFirst();
@@ -657,7 +749,7 @@ public class KBDbAdapter {
     	return subs;
     }
     
-    public long getSubscriptionDueTimeFor(String subskey) {
+    public synchronized long getSubscriptionDueTimeFor(String subskey) {
     	Cursor c = mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "last_update", "poll_interval" }, "subskey = '" + subskey + "'", null, null, null, null);
     	if (c.getCount() > 0) {
     		c.moveToFirst();
@@ -670,26 +762,26 @@ public class KBDbAdapter {
     	}
     }
     
-    public Cursor fetchDueSubscriptions() {
+    public synchronized Cursor fetchDueSubscriptions() {
     	return mDb.rawQuery("select subskey,class_name,last_update,poll_interval from " + SUBSCRIPTIONS_TABLE + " where (last_update + poll_interval) < " + System.currentTimeMillis(), null);
     	//return mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey", "class_name", "last_update", "poll_interval"}, "(last_update + poll_interval) <= " + System.currentTimeMillis(), null, null, null, null);
     }
     
-    public boolean subscriptionExists(String subskey) {
+    public synchronized boolean subscriptionExists(String subskey) {
     	return mDb.query(SUBSCRIPTIONS_TABLE, new String[] { "subskey" }, "subskey='" + subskey + "'", null, null, null, null).getCount() > 0;
     }
     
-    public Cursor fetchAllSubscriptions(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    public synchronized Cursor fetchAllSubscriptions(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
     	return mDb.query(SUBSCRIPTIONS_TABLE, projection, selection, selectionArgs, null, null, sortOrder);
     }
     
-    public Cursor fetchSubscription(long row_id,String[] projection) {
+    public synchronized Cursor fetchSubscription(long row_id,String[] projection) {
     	return mDb.query(SUBSCRIPTIONS_TABLE, projection, KEY_ROWID + "=" + row_id, null, null, null, null);
     }
     
     //Knowledge Base Functions
     
-    public Tag getTag(long row_id) {
+    public synchronized Tag getTag(long row_id) {
     	String tc, subclass, subvalue=null;
     	HashMap<String,String> retVal = new HashMap<String,String>();
     	Cursor c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "tag_classid", "subclass", "subvalue"}, KEY_ROWID+"="+row_id, null, null, null, null);
@@ -705,7 +797,7 @@ public class KBDbAdapter {
     	return dw.new Tag(row_id, tc, subclass, subvalue);
     }
     
-    public String getDescription(long row_id) {
+    public synchronized String getDescription(long row_id) {
     	Cursor c = mDb.query(DESCRIPTIONS_TABLE, new String[] { KEY_ROWID, "description" }, KEY_ROWID+"="+row_id, null, null, null, null);
     	if (c.getCount() == 0) {
     		c.close();
@@ -717,7 +809,7 @@ public class KBDbAdapter {
     	return retVal;
     }
     
-    public String getTagClass(long row_id) {
+    public synchronized String getTagClass(long row_id) {
     	Cursor c = mDb.query(TAG_CLASS_TABLE, new String[] { KEY_ROWID, "name"}, KEY_ROWID + "=" + row_id, null, null, null, null);
     	if (c.getCount() == 0) {
     		c.close();
@@ -729,7 +821,7 @@ public class KBDbAdapter {
     	return retVal;
     }
     
-    public Meta getMeta(long row_id) {
+    public synchronized Meta getMeta(long row_id) {
     	String name = "", value = null;
     	Cursor c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "name", "value"}, KEY_ROWID + "=" + row_id, null, null, null, null);
     	c.moveToFirst();
@@ -739,7 +831,7 @@ public class KBDbAdapter {
     	return dw.new Meta(row_id, name, value);
     }
     
-    public Acond getAcond(long row_id) {
+    public synchronized Acond getAcond(long row_id) {
     	Long[] di = new Long[0], ti = new Long[0];
     	//get descriptions
     	Cursor c = mDb.query(DESCRIPTIONS_TABLE, new String[] { KEY_ROWID, "description", "acondsid" }, "acondsid=" + row_id, null, null, null, null);
@@ -756,7 +848,7 @@ public class KBDbAdapter {
     	return dw.new Acond(row_id, di, ti);
     }
     
-    public Qcond getQcond(long row_id) {
+    public synchronized Qcond getQcond(long row_id) {
     	int refNum = -1;
     	Long[] ti = new Long[0];
     	//get refnum
@@ -775,11 +867,11 @@ public class KBDbAdapter {
     	return (refNum == -1 && ti.length == 0 ? dw.new Qcond(row_id) : dw.new Qcond(row_id, refNum, ti));
     }
     
-    public Fact getFact(long row_id) {
-    	String timestamp = "", dayOfWeek = "", queried = "";
+    public synchronized Fact getFact(long row_id) {
+    	String timestamp = "", dayOfWeek = "", queried = "", persistence = "";
     	Long[] mi = new Long[0], ti = new Long[0];
     	
-    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "timestamp", "dayOfWeek", "queried"}, KEY_ROWID+"="+row_id, null, null, null, null);
+    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "timestamp", "dayOfWeek", "queried", "persistence"}, KEY_ROWID+"="+row_id, null, null, null, null);
     	if (c.getCount() <= 0) {
     		c.close();
     		return dw.new Fact();
@@ -789,6 +881,8 @@ public class KBDbAdapter {
     	timestamp = c.getString(c.getColumnIndex("timestamp"));
     	dayOfWeek = c.getString(c.getColumnIndex("dayOfWeek"));
     	queried = c.getString(c.getColumnIndex("queried"));
+    	persistence = c.getString(c.getColumnIndex("persistence"));
+    	
     	//get tags
     	c.close();
     	c = mDb.query(TAGS_TABLE, new String[] { KEY_ROWID, "factsid"}, "factsid="+row_id, null, null, null, null);
@@ -802,10 +896,10 @@ public class KBDbAdapter {
     		mi = this.getIndicesFromCursor(c);
     	}
     	c.close();
-    	return dw.new Fact(row_id, timestamp, dayOfWeek, mi, ti, queried);
+    	return dw.new Fact(row_id, timestamp, dayOfWeek, mi, ti, queried, persistence);
     }
     
-    public QAT getQAT(long row_id) {
+    public synchronized QAT getQAT(long row_id) {
     	String qtext = "";
     	long acond_id = -1;
     	Long[] qi = new Long[0], mi = new Long[0];
@@ -840,7 +934,7 @@ public class KBDbAdapter {
     	return dw.new QAT(row_id, qtext, acond_id, qi, mi);
     }
     
-    public Long[] getAllQATs() {
+    public synchronized Long[] getAllQATs() {
     	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
     	if (c.getCount() <= 0) {
     		c.close();
@@ -851,7 +945,7 @@ public class KBDbAdapter {
     	return retVal;
     }
     
-    public Long[] getAllFacts() {
+    public synchronized Long[] getAllFacts() {
     	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID }, null, null, null, null, null);
     	if (c.getCount() <= 0) {
     		c.close();
@@ -867,7 +961,7 @@ public class KBDbAdapter {
      * @param fact_id
      * @return
      */
-    public HashMap<String,Object> getExpandedFact(long fact_id) {
+    public synchronized HashMap<String,Object> getExpandedFact(long fact_id) {
 		HashMap<String,Object> retVal = new HashMap<String,Object>();
 		//get timestamp
 		Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "timestamp", "dayOfWeek" }, KEY_ROWID + "=" + fact_id, null, null, null, null);
@@ -920,14 +1014,14 @@ public class KBDbAdapter {
      * @param qat_id
      * @return
      */
-    public HashMap<String,Object> getExpandedQAT(long qat_id) {
-    	Log.d("KBDbAdapter", "Sup, getQAT");
+    public synchronized HashMap<String,Object> getExpandedQAT(long qat_id) {
+    	//Log.d("KBDbAdapter", "Sup, getQAT");
     	HashMap<String,Object> retVal = new HashMap<String,Object>();
     	//get QText
     	/*"create table " + QAT_TABLE + " (_id integer primary key autoincrement, qtext string NOT NULL);";*/
     	Cursor c = mDb.query(QAT_TABLE, new String[] {KEY_ROWID,"qtext"}, KEY_ROWID+"="+qat_id, null, null, null, null);
     	if (c.getCount() != 1) {
-    		Log.d("KBDbAdapter", "Can't find QAT with id " + qat_id);
+    		//Log.d("KBDbAdapter", "Can't find QAT with id " + qat_id);
     		return null;
     	}
     	c.moveToFirst();
@@ -942,7 +1036,7 @@ public class KBDbAdapter {
     			System.out.print(c.getLong(c.getColumnIndex(KEY_ROWID)) + ",");
     			c.moveToNext();
     		}
-    		Log.d("KBDbAdapter", "");
+    		//Log.d("KBDbAdapter", "");
     		return null;
     	}
     	c.moveToFirst();
@@ -1019,7 +1113,7 @@ public class KBDbAdapter {
 			metas.add(meta);
 			c.moveToNext();
 		}
-		Log.d("KBDbAdapter", "Exiting getQat");
+		//Log.d("KBDbAdapter", "Exiting getQat");
 		retVal.put("metas", metas);
 		c.close();
     	return retVal;
@@ -1032,10 +1126,10 @@ public class KBDbAdapter {
      * @param tags
      * @return
      */
-    public Long[] getFilteredFacts(long ellapsedTimeMillis, String timeString, String[] tags) {
+    public Long[] getFilteredFacts(long ellapsedTimeMillis, String timeString, String[] tags, String persistence) {
     	Long[] time_filtered = null, tag_filtered = null;
     	if (ellapsedTimeMillis >= 0)
-    		time_filtered = this.getFilteredFactsByTime(ellapsedTimeMillis, timeString);
+    		time_filtered = this.getFilteredFactsByTime(ellapsedTimeMillis, timeString, persistence);
     	if (tags != null)
     		tag_filtered = this.getFilteredFactsByTag(tags);
     	
@@ -1052,7 +1146,7 @@ public class KBDbAdapter {
      * @param selectionArgs
      * @return
      */
-    public Long[] getFilteredFacts(String[] columns, String selection, String[] selectionArgs) {
+    public synchronized Long[] getFilteredFacts(String[] columns, String selection, String[] selectionArgs) {
     	Cursor c = mDb.query(FACTS_TABLE, columns, selection, selectionArgs, null, null, null);
     	if (c.getCount() <= 0) {
     		c.close();
@@ -1074,7 +1168,7 @@ public class KBDbAdapter {
     	long seconds = ellapsedTimeMillis/1000;
     	String pivotTime = (timeString.equalsIgnoreCase("*") ? "'now'" : "'" + timeString + "'");
     	String query = "timestamp between datetime(" + pivotTime + ",'-" + seconds + " seconds') and datetime(" + pivotTime + ") or timestamp between datetime(" + pivotTime + ") and datetime(" + pivotTime + ",'+" + seconds + " seconds')";
-    	Log.d("KBDbAdapter", query);
+    	//Log.d("KBDbAdapter", query);
     	return getFilteredFacts(new String[] { KEY_ROWID, "timestamp"}, query, null);
     }
     
@@ -1085,24 +1179,59 @@ public class KBDbAdapter {
      * @param timeString formatted as: YYYY-MM-DDHH:mm:ss or * to use current time
      * @return
      */
-    public Long[] getFilteredFactsByTime(long ellapsedTimeMillis,String timeString) {
+    public Long[] getFilteredFactsByTime(long ellapsedTimeMillis,String timeString, String persistence) {
     	long seconds = ellapsedTimeMillis/1000;
     	String pivotTime = (timeString.equalsIgnoreCase("*") ? "'now'" : "'" + timeString + "'");
-    	String query = "timestamp between datetime(" + pivotTime + ",'-" + seconds + " seconds') and datetime(" + pivotTime + ")";
-    	Log.d("KBDbAdapter", query);
+    	String query = "timestamp between datetime(" + pivotTime + ",'-" + seconds + " seconds') and datetime(" + pivotTime + ") AND " +
+    			"persistence = '" + persistence + "'";
+    	//Log.d("KBDbAdapter", query);
     	return getFilteredFacts(new String[] { KEY_ROWID, "timestamp"}, query, null);
     }
     
-    public Long[] getUnqueriedFilteredFactsByTime(long ellapsedTimeMillis,String timeString) {
+    public Long[] getUnqueriedFilteredFactsByTime(long ellapsedTimeMillis,String timeString, String persistence) {
     	long seconds = ellapsedTimeMillis/1000;
     	String pivotTime = (timeString.equalsIgnoreCase("*") ? "'now'" : "'" + timeString + "'");
     	String query = "timestamp between datetime(" + pivotTime + ",'-" + seconds 
     			+ " seconds') and datetime(" + pivotTime + ") and " 
-    			+ " queried = 'false'";
-    	Log.d("KBDbAdapter", query);
+    			+ " queried = 'false' and " 
+    			+ "persistence = '" + persistence + "'";
+    	//Log.d("KBDbAdapter", query);
     	return getFilteredFacts(new String[] { KEY_ROWID, "timestamp"}, query, null);
     }
     
+    public synchronized Long[] getPersistentFacts() {
+    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "persistence" }, "persistence = 'persistent'", 
+    			null, null, null, null);
+    	ArrayList<Long> retVal = new ArrayList<Long>();
+    	if (c != null) {
+    		if (c.getCount() > 0) {
+    			c.moveToFirst();
+    			while (!c.isAfterLast()) {
+    				retVal.add(c.getLong(c.getColumnIndex(KEY_ROWID)));
+    				c.moveToNext();
+    			}
+    		}
+    		c.close();
+    	}
+    	return retVal.toArray(new Long[retVal.size()]);
+    }
+    
+    public synchronized Long[] getUnqueriedFacts() {
+    	Cursor c = mDb.query(FACTS_TABLE, new String[] { KEY_ROWID, "queried"}, 
+    			"queried = 'false'", null, null, null, null);
+    	ArrayList<Long> retVal = new ArrayList<Long>();
+    	if (c != null) {
+    		if (c.getCount() > 0) {
+    			c.moveToFirst();
+    			while (!c.isAfterLast()) {
+    				retVal.add(c.getLong(c.getColumnIndex(KEY_ROWID)));
+    				c.moveToNext();
+    			}
+    		}
+    		c.close();
+    	}
+    	return retVal.toArray(new Long[retVal.size()]);
+    }
     /**
      * Gets all facts based on presence of a tag
      * Tags should be formatted as class_name:subclass_name
@@ -1110,8 +1239,8 @@ public class KBDbAdapter {
      * @param tags
      * @return
      */
-    public Long[] getFilteredFactsByTag(String[] tags) {
-    	Log.d("KBDbAdapter", "Entering get filtered facts by tag:");
+    public synchronized Long[] getFilteredFactsByTag(String[] tags) {
+    	//Log.d("KBDbAdapter", "Entering get filtered facts by tag:");
     	String[] helper = tags[0].split(":");
     	StringBuffer query = new StringBuffer("select distinct facts._id, tag_class.name from facts,tags,tag_class where tags.tag_classid = tag_class._id and facts._id = tags.factsid and ((tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'": "") + ") ");   	
     	for (int i = 1; i < tags.length; i++) {
@@ -1119,7 +1248,7 @@ public class KBDbAdapter {
     		query.append("or (tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'" : "") + ") ");
     	}
     	query.append(");");
-    	Log.d("KBDbAdapter", query.toString());
+    	//Log.d("KBDbAdapter", query.toString());
     	Cursor c = mDb.rawQuery(query.toString(), null);
     	Long[] retVal = this.getIndicesFromCursor(c);
     	c.close();
@@ -1159,8 +1288,8 @@ public class KBDbAdapter {
      * @param tags
      * @return
      */
-    public Long[] getFilteredQatsByTag(String[] tags) {
-    	Log.d("KBDbAdapter", "Entering get filtered qats by tag:");
+    public synchronized Long[] getFilteredQatsByTag(String[] tags) {
+    	//Log.d("KBDbAdapter", "Entering get filtered qats by tag:");
     	String[] helper = tags[0].split(":");
     	StringBuffer query = new StringBuffer("select distinct qats._id from qats,qconds,tags,tag_class where qconds.qatid = qats._id and tags.qcondsid = qconds._id and tags.tag_classid = tag_class._id and ((tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'": "") + ") ");
     	for (int i = 1; i < tags.length; i++) {
@@ -1168,7 +1297,7 @@ public class KBDbAdapter {
     		query.append("or (tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'" : "") + ") ");
     	}
     	query.append(");");
-    	Log.d("KBDbAdapter", query.toString());
+    	//Log.d("KBDbAdapter", query.toString());
     	Cursor c = mDb.rawQuery(query.toString(), null);
     	Long[] qconds_matches = this.getIndicesFromCursor(c);
     	
@@ -1179,7 +1308,7 @@ public class KBDbAdapter {
     		query.append("or (tag_class.name = '" + helper[0] + "'" + (helper.length > 1 ? " and tags.subclass = '" + helper[1] + "'" : "") + ") ");
     	}
     	query.append(");");
-    	Log.d("KBDbAdapter", query.toString());
+    	//Log.d("KBDbAdapter", query.toString());
     	c.close();
     	c = mDb.rawQuery(query.toString(), null);
     	Long[] aconds_matches = this.getIndicesFromCursor(c);
@@ -1192,7 +1321,7 @@ public class KBDbAdapter {
      * @param metas
      * @return
      */
-    public Long[] getFilteredQatsByMetas(String[] metas) {
+    public synchronized Long[] getFilteredQatsByMetas(String[] metas) {
     	String[] helper = metas[0].split(":");
     	StringBuffer query = new StringBuffer("select distinct qats._id from qats,metas where metas.qatid = qats._id and ((metas.name = '" + helper[0] + "'" + (helper.length > 1 ? " and metas.value = '" + helper[1] + "'": "") + ") ");   	
     	for (int i = 1; i < metas.length; i++) {
@@ -1200,7 +1329,7 @@ public class KBDbAdapter {
     		query.append("or (metas.name = '" + helper[0] + "'" + (helper.length > 1 ? " and metas.value = '" + helper[1] + "'" : "") + ") ");
     	}
     	query.append(");");
-    	Log.d("KBDbAdapter", query.toString());
+    	//Log.d("KBDbAdapter", query.toString());
     	Cursor c = mDb.rawQuery(query.toString(), null);
     	Long[] retVal = this.getIndicesFromCursor(c);
     	c.close();

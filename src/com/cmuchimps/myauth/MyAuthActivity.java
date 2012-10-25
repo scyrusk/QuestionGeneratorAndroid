@@ -20,22 +20,19 @@ import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ProviderInfo;
-import android.database.Cursor;
 import android.graphics.PorterDuff;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
-import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.util.Log;
@@ -78,6 +75,7 @@ public class MyAuthActivity extends Activity {
 	private ConnectivityManager cm;
 	private NotificationManager nm;
 	private LayoutInflater li;
+	private ProgressDialog mPD;
 	
 	private User mUser;
 	private ServerCommunicator mCommunicator;
@@ -126,7 +124,7 @@ public class MyAuthActivity extends Activity {
 			"Thank you for participating in this study!\n\n" +
 			"Detailed instructions can be found at http://casa.cmuchimps.org/instructions\n\n" +
 			"In short, please answer as many questions as you can everyday.\n\n" +
-			"Don't forget to hit Send Packets to Server (in the menu options) when you are finished!";
+			"Don't forget to hit Send Data to Server (in the menu options) when you are finished!";
 	
 	 private BroadcastReceiver packetUpdateReceiver = new BroadcastReceiver() {
 	        @Override
@@ -184,7 +182,8 @@ public class MyAuthActivity extends Activity {
 					showDialog(DIALOG_SKIP_PICKER);
 				} else { //because ordering matters above
 					resetFields();
-					askQuestion();
+					//askQuestion();
+					(new AskQuestionTask()).execute();
 				}
 			}
         });
@@ -215,6 +214,10 @@ public class MyAuthActivity extends Activity {
 						supplementary_responses.put("supp3",""+mSuppResponse3);
 						String timestamp = (String) DateFormat.format("yyyy-MM-dd kk:mm:ss", System.currentTimeMillis());
 						//Toast.makeText(getApplicationContext(), user_answer,Toast.LENGTH_SHORT).show();
+						ArrayList<Long> queriedFacts = currQ.getFactsToMarkAsQueried();
+						//Log.d("Question", "Registering " + queriedFacts.size() + " facts as queried");
+						int val = mDbHelper.registerFactsAsQueried(queriedFacts);
+						//Log.d("Question", "Registered " + val + " facts as queried");
 						try {
 							mCommunicator.queuePacket(new TransmissionPacket(ServerCommunicator.getNextPacketID(getFilesDir()),
 									user_id,qtext,question,answer_metas,user_answer,supplementary_responses,
@@ -225,7 +228,8 @@ public class MyAuthActivity extends Activity {
 						}	
 					}
 					resetFields();
-					askQuestion();
+					//askQuestion();
+					(new AskQuestionTask()).execute();
 				} else {
 					showDialog(DIALOG_SUB_ERROR);
 				}
@@ -292,7 +296,6 @@ public class MyAuthActivity extends Activity {
         /* Initialize managers and sensor listeners */
         this.initializeLocationListener();
         cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
-        
         //testing cp
         /* for (PackageInfo pack : getPackageManager().getInstalledPackages(PackageManager.GET_PROVIDERS)) {
             ProviderInfo[] providers = pack.providers;
@@ -308,13 +311,14 @@ public class MyAuthActivity extends Activity {
     }
     
     private void testFactFinder() {
-    	String[] tags = { "Internet" };
-    	String[] subclasses = { "*" };
+    	String[] tags = { "Audio" };
+    	String[] subclasses = { "Song-Title" };
     	String[] subvalues = { "*" };
     	
-    	Long[] facts = mDbHelper.findAllFactsWithTags(tags, subclasses, subvalues);
-    	this.printFacts(facts);
+    	Long[] facts = mDbHelper.findAllFactsWithTagsWithinTime(tags, subclasses, subvalues,24*UtilityFuncs.HOUR_TO_MILLIS, "dynamic");
+    	//this.printFacts(facts);
     }
+    
     private void replaceView(boolean dropdown) {
     	ViewGroup parent = (ViewGroup)this.findViewById(R.id.input_layout);
     	parent.removeAllViews();
@@ -346,7 +350,7 @@ public class MyAuthActivity extends Activity {
     			mUser = User.load(getFilesDir());
     		} catch (Exception e) {
     			e.printStackTrace();
-    			Log.d("MyAuthActivity","Could not load user");
+    			//Log.d("MyAuthActivity","Could not load user");
     		}
     		return mUser;
     	}
@@ -355,55 +359,24 @@ public class MyAuthActivity extends Activity {
     @Override
     public void onResume() {
     	super.onResume();
-    	/* Populate database with scaffolds (qats and subscriptions) if needed */
-    	if (mDbHelper.getNumSubscriptions() == 0) { //if we have no knowledge subscriptions
-    		this.repopulateDB();
-    		this.forcePollSubscriptions();
-    	}
-    	/* Control flow: consent form if not accepted => New User Activity if no user => Main Q/A activity */
-    	if (!(new File(getFilesDir(),ConsentFormActivity.CONSENT_FILE)).exists()) {
-    		if (!mConsentRequested) {
-    			startActivityForResult(new Intent(this, ConsentFormActivity.class), CONSENT_RESULT);
-    			mConsentRequested = true;
-    		}
-    	} else if (mUser == null && !User.exists(getFilesDir())) {
-    		startActivityForResult(new Intent(this, NewUserActivity.class), NEW_USER_RESULT);
-    	} else {
-    		try {
-				mUser = User.load(getFilesDir());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-        	
-        	
-        	/* Set alarms for updating knowledge subscriptions and uploading packets to server */
-        	this.setUpdaterAlarm();
-        	this.setUploaderAlarm();
-        	this.setNotificationAlarm();
-        	
-    		send_to_server_message.setText((mCommunicator.hasQueuedPackets()) ? "You have responses to send to the server (?)." : "");
-    		
-    		questionStartTime = System.currentTimeMillis();
-    		registerReceiver(packetUpdateReceiver, new IntentFilter(UploaderService.BROADCAST_ACTION));
-    		
-        	/* Initialize location manager */
-        	if (lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-    			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
-    		} else if (lm != null && lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-    			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
-    		}
-    	}
-    	this.testFactFinder();
+    	//mCommunicator.sendPacket(UtilityFuncs.makeTestPacket(mDbHelper.getFact(mDbHelper.getUnqueriedFacts()[0])));
+		questionStartTime = System.currentTimeMillis();
+		registerReceiver(packetUpdateReceiver, new IntentFilter(UploaderService.BROADCAST_ACTION));
     }
+    
+    /*public void printFacts(Long[] ids) {
+    	for (Long l : ids)
+    		Log.d("Fact", mDbHelper.getFact(l).toString());
+    }
+    
+    public void printQATs(Long[] ids) {
+    	for (Long l : ids)
+    		Log.d("QAT", mDbHelper.getQAT(l).toString());
+    }*/
     
     @Override
     public void onStart() {
     	super.onStart();
-    	/* Populate database with scaffolds (qats and subscriptions) if needed */
-        if (mDbHelper.getNumSubscriptions() == 0) { //if we have no knowledge subscriptions
-    		this.repopulateDB();
-    		this.forcePollSubscriptions();
-    	}
         /* Control flow: consent form if not accepted => New User Activity if no user => Main Q/A activity */
     	if (!(new File(getFilesDir(),ConsentFormActivity.CONSENT_FILE)).exists()) {
     		this.forcePollSubscriptions();
@@ -414,39 +387,108 @@ public class MyAuthActivity extends Activity {
     	} else if (mUser == null && !User.exists(getFilesDir())) {
     		startActivityForResult(new Intent(this, NewUserActivity.class),NEW_USER_RESULT);
     	} else {
+    		if (mDbHelper.getNumSubscriptions() == 0) {
+	    		mPD = ProgressDialog.show(this, "Initializing...", "Please wait a moment while the knowledge base initializes.");
+	    		(new DBInitiaterTask()).execute();
+	    		try {
+					mUser = User.load(getFilesDir());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+	    		/* Set alarms for updating knowledge subscriptions and uploading packets to server */
+	        	setUpdaterAlarm();
+	        	setUploaderAlarm();
+	        	setNotificationAlarm();
+	        	
+	    		send_to_server_message.setText((mCommunicator.hasQueuedPackets()) ? "You have responses to send to the server (?)." : "");
+	    		
+	    		Notification note = new Notification(R.drawable.ic_launcher, "A new notification", System.currentTimeMillis());
+	    		note.flags |= Notification.FLAG_AUTO_CANCEL;
+	    		note.number += 1;
+    		} else {
+    			try {
+    				mUser = User.load(getFilesDir());
+    				//Log.d("MyAuthActivity","User:");
+    				//Log.d("MyAuthActivity",mUser.toString());
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    			}
+        		// Set alarms for updating knowledge subscriptions and uploading packets to server
+            	this.setUpdaterAlarm();
+            	this.setUploaderAlarm();
+            	this.setNotificationAlarm();
+            	
+            	// Initialize location manager
+        		if (lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+        			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
+        		} else if (lm != null && lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+        			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
+        		}
+        		
+        		setPassiveLocationUpdateAlarm();
+        		
+        		send_to_server_message.setText((mCommunicator.hasQueuedPackets()) ? "You have responses to send to the server (?)." : "");
+        		//Log.d("Database lock problem", "asking new question");
+        		if (askOnStart && mDbHelper.getAllFacts().length > 0) {
+        			askOnStart = false;
+        			//askQuestion();
+        			(new AskQuestionTask()).execute();
+        		}
+        		Notification note = new Notification(R.drawable.ic_launcher, "A new notification", System.currentTimeMillis());
+        		note.flags |= Notification.FLAG_AUTO_CANCEL;
+        		note.number += 1;
+    		}
+        	/* Populate database with scaffolds (qats and subscriptions) if needed */
+            /*if (mDbHelper.getNumSubscriptions() == 0) { //if we have no knowledge subscriptions
+        		ProgressDialog pd = ProgressDialog.show(this, "Initializing...", "Please wait a moment while the knowledge base initializes.");
+            	this.repopulateDB();
+            	pd.dismiss();
+        		this.forcePollSubscriptions();
+        		//Log.d("Database lock problem", "repolling");
+        	}
     		try {
 				mUser = User.load(getFilesDir());
-				Log.d("MyAuthActivity","User:");
-				Log.d("MyAuthActivity",mUser.toString());
+				//Log.d("MyAuthActivity","User:");
+				//Log.d("MyAuthActivity",mUser.toString());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-    		/* Set alarms for updating knowledge subscriptions and uploading packets to server */
+    		// Set alarms for updating knowledge subscriptions and uploading packets to server
         	this.setUpdaterAlarm();
         	this.setUploaderAlarm();
         	this.setNotificationAlarm();
         	
-        	/* Initialize location manager */
+        	// Initialize location manager
     		if (lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
     			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
     		} else if (lm != null && lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
     			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
     		}
     		
+    		setPassiveLocationUpdateAlarm();
+    		
     		send_to_server_message.setText((mCommunicator.hasQueuedPackets()) ? "You have responses to send to the server (?)." : "");
-    		System.out.println("asking new question");
-    		if (askOnStart) {
+    		//Log.d("Database lock problem", "asking new question");
+    		if (askOnStart && mDbHelper.getAllFacts().length > 0) {
     			askOnStart = false;
-    			askQuestion();
+    			//askQuestion();
+    			(new AskQuestionTask()).execute();
     		}
     		Notification note = new Notification(R.drawable.ic_launcher, "A new notification", System.currentTimeMillis());
     		note.flags |= Notification.FLAG_AUTO_CANCEL;
     		note.number += 1;
-    		this.cullOldDatabaseEntries();
+    		this.cullOldDatabaseEntries();*/
     	}
     }
     
-    @Override
+    private void setPassiveLocationUpdateAlarm() {
+    	Intent locIntent = new Intent(this, LocationChangedReceiver.class);
+		PendingIntent locLisPenInt = PendingIntent.getBroadcast(getApplicationContext(), 
+				0, locIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		lm.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 3*1000, 0, locLisPenInt);
+	}
+
+	@Override
     public void onPause() {
     	if (lm != null) lm.removeUpdates(ll);
     	if ((cm != null && cm.getActiveNetworkInfo().isConnectedOrConnecting()) && mCommunicator.hasQueuedPackets()) { 
@@ -458,14 +500,14 @@ public class MyAuthActivity extends Activity {
 	    	ServerCommunicator.serializePacketID(getFilesDir());
 	    	qg.serializeIDTrack();
     	} catch (IOException e) {
-    		Log.d("MyAuthActivity","Could not serialize...");
+    		//Log.d("MyAuthActivity","Could not serialize...");
     		e.printStackTrace();
     	}
     	
     	try {
     		unregisterReceiver(packetUpdateReceiver);
     	} catch (IllegalArgumentException e) {
-    		Log.d("MyAuthActivity", "Cannot unregister packetUpdateReceiver because not registered.");
+    		//Log.d("MyAuthActivity", "Cannot unregister packetUpdateReceiver because not registered.");
     	}
     	super.onPause();
     }
@@ -492,16 +534,17 @@ public class MyAuthActivity extends Activity {
 	    	ServerCommunicator.serializePacketID(getFilesDir());
 	    	qg.serializeIDTrack();
     	} catch (IOException e) {
-    		Log.d("MyAuthActivity","Could not serialize packet id...");
+    		//Log.d("MyAuthActivity","Could not serialize packet id...");
     		e.printStackTrace();
     	}
     	
     	try {
     		unregisterReceiver(packetUpdateReceiver);
     	} catch (IllegalArgumentException e) {
-    		Log.d("MyAuthActivity", "Cannot unregister packetUpdateReceiver because not registered.");
+    		//Log.d("MyAuthActivity", "Cannot unregister packetUpdateReceiver because not registered.");
     	}
-    	
+
+		this.cullOldDatabaseEntries();
     	super.onStop();
     }
     
@@ -529,9 +572,9 @@ public class MyAuthActivity extends Activity {
 				//create fact about location here
 				//2 tags: person:User was at location
 				//also get Timestamp and day of week
-				Log.d("MyAuthActivity","Location changed event has triggered for some reason.");
+				//Log.d("MyAuthActivity","Location changed event has triggered for some reason.");
 				if (System.currentTimeMillis() > mDbHelper.getSubscriptionDueTimeFor("Location")) {
-					Log.d("MyAuthActivity","adding location fact from location listener");
+					//Log.d("MyAuthActivity","adding location fact from location listener");
 					String timestamp, dayOfWeek;
 					ArrayList<HashMap<String,String>> tags = new ArrayList<HashMap<String,String>>(),metas = new ArrayList<HashMap<String,String>>();
 					Date date = new Date(location.getTime());
@@ -557,12 +600,12 @@ public class MyAuthActivity extends Activity {
 					//add location:Accuracy tag
 					curr = new HashMap<String,String>();
 					curr.put("tag_class","Location");
-					curr.put("subclass", "Geopoint");
+					curr.put("subclass", "Accuracy");
 					curr.put("subvalue", ""+location.getAccuracy());
 					tags.add(curr);
 					//TODO: Should we do reverse geocoding here? Who knows.
 					//no metas for now
-					mDbHelper.createFact(timestamp, dayOfWeek, tags, metas);
+					mDbHelper.createFact(timestamp, dayOfWeek, "dynamic", tags, metas);
 					mDbHelper.updateSubscriptionTime("Location", location.getTime());
 				}
 			}
@@ -600,65 +643,21 @@ public class MyAuthActivity extends Activity {
 	        question_prompt.setText(currQ.getQuestion());
 	        if (!isDD) input.setAdapter(null);
 	        else inputDD.setAdapter(null);
-	        /*ArrayList<String> autoents = new ArrayList<String>();
-        	if (currQ.getAnswerType().equalsIgnoreCase("Person:Contact")) {
-        		Cursor c = this.getContentResolver().query(
-        				ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
-        				new String[] { Phone.DISPLAY_NAME }, null, null, null);
-        		if (c.getCount() > 0) {
-        			c.moveToFirst();
-        			while (!c.isAfterLast()) {
-        				autoents.add(c.getString(0));
-        				c.moveToNext();
-        			}
-        		}
-        		c.close();
-        	} else if (currQ.getAnswerType().equalsIgnoreCase("Application:*")) {
-        		Log.d("MyAuthActivity", "Asking question about apps");
-        		PackageManager pm = this.getPackageManager();
-        		List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
-        		for (ApplicationInfo pi : packages) autoents.add(pm.getApplicationLabel(pi).toString());
-        	}
-        	if (currQ.isRecallQ()) {
-        		replaceView(true);
-        		int numAnswers = (r.nextInt(10) >= 5 ? 5 : 10);
-        		List<String> allAnswers = new ArrayList<String>();
-        		allAnswers.add(currQ.getBestAnswer());
-        		allAnswers.addAll(currQ.getNDistractionAnswers((numAnswers-1)/2));
-        		autoents.removeAll(allAnswers);
-        		for (int i = allAnswers.size(); i < numAnswers; i++) {
-        			if (autoents.size() == 0) break;
-        			int addIndex = r.nextInt(autoents.size());
-        			allAnswers.add(autoents.get(addIndex));
-        			autoents.remove(addIndex);
-        		}
-        		ArrayAdapter<String> adap = new ArrayAdapter<String>(this,
-        				android.R.layout.simple_spinner_item, allAnswers);
-        		adap.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        		inputDD.setAdapter(adap);
-        	} else if (currQ.isAutoCompl()) {
-        		replaceView(false);
-	        	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-	            		android.R.layout.simple_dropdown_item_1line, autoents.toArray(new String[autoents.size()]));
-	        	input.setAdapter(adapter);
-	        } else {
-	        	replaceView(false);
-	        }*/
         	if (!currQ.isRecallQ()) {
-        		Log.d("QuestionType","Recog question");
+        		//Log.d("QuestionType","Recog question");
         		replaceView(true);
         		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
         				android.R.layout.simple_spinner_item, currQ.getAnswerListAsArr());
         		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         		inputDD.setAdapter(adapter);
         	} else if (currQ.isAutoCompl()) {
-        		Log.d("QuestionType","Recall autocomplete question");
+        		//Log.d("QuestionType","Recall autocomplete question");
         		replaceView(false);
 	        	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
 	            		android.R.layout.simple_dropdown_item_1line, currQ.getAutoComplListAsArr());
 	        	input.setAdapter(adapter);
         	} else {
-        		Log.d("QuestionType","Neither type");
+        		//Log.d("QuestionType","Neither type");
         		replaceView(false);
         	}
         	
@@ -687,7 +686,7 @@ public class MyAuthActivity extends Activity {
         }
     }
     
-    private void printFacts(Long[] facts) {
+    /*private void printFacts(Long[] facts) {
     	Log.d("MyAuthActivity-FACT","ALL FACTS:\n");
         for (Long l : facts) {
         	Log.d("MyAuthActivity-FACT",mDbHelper.getFact(l).toString());
@@ -699,7 +698,7 @@ public class MyAuthActivity extends Activity {
         for (Long l : qats) { 
         	Log.d("MyAuthActivity",mDbHelper.getQAT(l).toString());
         }
-    }
+    }*/
     
     private void repopulateDB() {
         try {
@@ -709,7 +708,6 @@ public class MyAuthActivity extends Activity {
 		}
         
         this.mParser = new KBXMLParser(this,mDbHelper);
-        //mParser.parseFactBase("qg_xml/knowledgebase.xml");
         mParser.parseQATs("qg_xml/qats.xml");
         createSensorSubscriptions();
     }
@@ -741,15 +739,17 @@ public class MyAuthActivity extends Activity {
     private void setNotificationAlarm() {
     	Intent notifier = new Intent(this, NotificationReceiver.class);
     	Calendar cal = Calendar.getInstance();
-    	cal.add(Calendar.HOUR_OF_DAY,20);
-    	cal.add(Calendar.MINUTE,0);
-    	cal.add(Calendar.SECOND, 0);
-    	cal.add(Calendar.MILLISECOND, 0);
-    	Log.d("MyAuthActivity","Setting alarm for " + cal.getTimeInMillis());
+    	cal.set(Calendar.HOUR_OF_DAY,20);
+    	cal.set(Calendar.MINUTE,0);
+    	cal.set(Calendar.SECOND, 0);
+    	cal.set(Calendar.MILLISECOND, 0);
+    	if (System.currentTimeMillis() > cal.getTimeInMillis()) 
+    		cal.add(Calendar.DAY_OF_MONTH, 1);
+    	//Log.d("MyAuthActivity","Setting alarm for " + cal.getTimeInMillis());
     	PendingIntent recurringNotification = PendingIntent.getBroadcast(getApplicationContext(), 0, 
     			notifier, PendingIntent.FLAG_UPDATE_CURRENT);
     	AlarmManager alarms = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-    	alarms.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 3*UtilityFuncs.HOUR_TO_MILLIS, 
+    	alarms.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), 
     			AlarmManager.INTERVAL_HALF_DAY, recurringNotification);
     }
     
@@ -760,15 +760,18 @@ public class MyAuthActivity extends Activity {
     	Intent updater = new Intent(this, SubscriptionReceiver.class);
     	PendingIntent recurringUpdate = PendingIntent.getBroadcast(getApplicationContext(), 0, updater, PendingIntent.FLAG_CANCEL_CURRENT);
     	AlarmManager alarms = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-    	//alarms.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1 * UtilityFuncs.MIN_TO_MILLIS, 10l*UtilityFuncs.MIN_TO_MILLIS, recurringUpdate);
-    	alarms.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1 * UtilityFuncs.MIN_TO_MILLIS, 10l*UtilityFuncs.MIN_TO_MILLIS, recurringUpdate);
+    	alarms.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1000, 
+    			10l * UtilityFuncs.MIN_TO_MILLIS, recurringUpdate);
+    	//alarms.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1 * UtilityFuncs.MIN_TO_MILLIS, 10l*UtilityFuncs.MIN_TO_MILLIS, recurringUpdate);
     }
     
     private void setUploaderAlarm() {
     	Intent uploader = new Intent(this, UploaderReceiver.class);
     	PendingIntent recurringUpload = PendingIntent.getBroadcast(getApplicationContext(), 0, uploader, PendingIntent.FLAG_UPDATE_CURRENT);
     	AlarmManager alarms = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-    	alarms.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1 * UtilityFuncs.MIN_TO_MILLIS, AlarmManager.INTERVAL_HALF_DAY, recurringUpload);
+    	alarms.setInexactRepeating(AlarmManager.RTC_WAKEUP, 
+    			System.currentTimeMillis() + 1 * UtilityFuncs.MIN_TO_MILLIS, 
+    			AlarmManager.INTERVAL_HALF_DAY, recurringUpload);
     }
     
     /**
@@ -796,22 +799,48 @@ public class MyAuthActivity extends Activity {
      * Initializes subscriptions table.
      */
     private void createSensorSubscriptions() {
-    	String[] SensorSubscriptions = new String[] { "Communication", "InternetBrowsing", "Media", "UserDictionary", "Contact", "Calendar", "ApplicationUse", "Location"};
-    	Long[] PollIntervals = new Long[] { 3l*UtilityFuncs.HOUR_TO_MILLIS, 3l*UtilityFuncs.DAY_TO_MILLIS, 1l*UtilityFuncs.DAY_TO_MILLIS, 7l*UtilityFuncs.DAY_TO_MILLIS, 3l*UtilityFuncs.DAY_TO_MILLIS, 7l*UtilityFuncs.DAY_TO_MILLIS, 30l*UtilityFuncs.MIN_TO_MILLIS, 30l*UtilityFuncs.MIN_TO_MILLIS};
+    	String[] SensorSubscriptions = new String[] { 
+    		"Communication", "InternetBrowsing", "Media", 
+    		"UserDictionary", "Contact", "Calendar", 
+    		"ApplicationUse", "Location"
+    	};
+    	Long[] PollIntervals = new Long[] { 
+    		3l*UtilityFuncs.HOUR_TO_MILLIS, //Comm
+    		3l*UtilityFuncs.DAY_TO_MILLIS, //Int Brows
+    		1l*UtilityFuncs.DAY_TO_MILLIS, //Media
+    		7l*UtilityFuncs.DAY_TO_MILLIS, //User Dict 
+    		3l*UtilityFuncs.DAY_TO_MILLIS, //Contact
+    		7l*UtilityFuncs.DAY_TO_MILLIS, //Calendar
+    		30l*UtilityFuncs.MIN_TO_MILLIS, //AppUse
+    		30l*UtilityFuncs.MIN_TO_MILLIS //Location
+    	};
+    	Long[] InitialUpdateTimes = new Long[] {
+    		System.currentTimeMillis() - (1*UtilityFuncs.DAY_TO_MILLIS),
+    		System.currentTimeMillis() - (1*UtilityFuncs.DAY_TO_MILLIS),
+    		0l,
+    		0l,
+    		0l,
+    		0l,
+    		System.currentTimeMillis() - (1*UtilityFuncs.DAY_TO_MILLIS),
+    		System.currentTimeMillis() - (1*UtilityFuncs.DAY_TO_MILLIS)
+    	};
     	
     	for (int i = 0; i < SensorSubscriptions.length; i++) {
 			if (!mDbHelper.subscriptionExists(SensorSubscriptions[i])) {
 				//System.out.println(System.currentTimeMillis());
-				mDbHelper.createSubscription(SensorSubscriptions[i], PollIntervals[i], System.currentTimeMillis() - (1*UtilityFuncs.DAY_TO_MILLIS), "com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + SensorSubscriptions[i] + "KnowledgeSubscription");
+				mDbHelper.createSubscription(SensorSubscriptions[i], 
+					PollIntervals[i], InitialUpdateTimes[i], 
+					"com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + 
+							SensorSubscriptions[i] + "KnowledgeSubscription");
 				try {
 					Class c = Class.forName("com.cmuchimps.myauth.KnowledgeTranslatorWrapper$" + SensorSubscriptions[i] + "KnowledgeSubscription");
 					if (!(Modifier.isStatic(c.getModifiers()) || Modifier.isAbstract(c.getModifiers()))) {
 						KnowledgeSubscription ks = (KnowledgeSubscription) c.getDeclaredConstructor(new Class[] { KnowledgeTranslatorWrapper.class }).newInstance(new Object[] { this.ktw });
 						c.getMethod("poll", null).invoke(ks, null);
-						Log.d("MyAuthActivity","Successfully polled " + SensorSubscriptions[i] + "KnowledgeSubscription!");
+						//Log.d("MyAuthActivity","Successfully polled " + SensorSubscriptions[i] + "KnowledgeSubscription!");
 					}
 				} catch (Throwable e) {
-					Log.d("MyAuthActivity","Failed to update class " + SensorSubscriptions[i]);
+					//Log.d("MyAuthActivity","Failed to update class " + SensorSubscriptions[i]);
 					e.printStackTrace();
 				}
 			}
@@ -858,7 +887,7 @@ public class MyAuthActivity extends Activity {
             if (resultCode == RESULT_OK) {
             	//Send user packet to server if we have connectivity
             	try {
-            		System.out.println("Getting to user created!");
+            		//System.out.println("Getting to user created!");
 	            	if (User.exists(getFilesDir())) {
 	            		mCommunicator.queuePacket((mUser == null ? User.load(getFilesDir()) : mUser));
 	            	}
@@ -877,8 +906,8 @@ public class MyAuthActivity extends Activity {
         	double lng = (Double) data.getExtras().get("longitude");
         	String toPrint = lat + "," + lng;
         	input.setText(toPrint);
-        	System.out.println(toPrint);
-        	Toast.makeText(getApplicationContext(), toPrint, Toast.LENGTH_SHORT).show();
+        	//System.out.println(toPrint);
+        	//Toast.makeText(getApplicationContext(), toPrint, Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -931,7 +960,8 @@ public class MyAuthActivity extends Activity {
 						} else {
 							queueSkipQuestionPacket("");
 							dialog.dismiss();
-							askQuestion();
+							//askQuestion();
+							(new AskQuestionTask()).execute();
 						}
 					}
 				})
@@ -946,14 +976,16 @@ public class MyAuthActivity extends Activity {
                     public void onClick(DialogInterface dialog, int whichButton) {
                     	final EditText explanationEditText = (EditText)explanationDialogView.findViewById(R.id.explanationEntry);
                     	queueSkipQuestionPacket(explanationEditText.getText().toString());
-    					askQuestion();
+    					//askQuestion();
+                    	(new AskQuestionTask()).execute();
                         dialog.dismiss();
                     }
                 })
                 .setNegativeButton("Skip", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                     	queueSkipQuestionPacket("");
-    					askQuestion();
+    					//askQuestion();
+                    	(new AskQuestionTask()).execute();
                         dialog.dismiss();
                     }
                 });
@@ -1024,7 +1056,7 @@ public class MyAuthActivity extends Activity {
     
     private void sendPacketsInBackground() {
     	if (cm.getActiveNetworkInfo().isConnected() && mCommunicator.hasQueuedPackets()) { 
-    		Log.d("MyAuth","Starting service to upload packets...");
+    		//Log.d("MyAuth","Starting service to upload packets...");
 			Intent uploader = new Intent(getApplicationContext(),UploaderService.class);
     		this.startService(uploader);
     		Toast.makeText(getApplicationContext(), "Sending in background...", Toast.LENGTH_SHORT).show();
@@ -1034,6 +1066,99 @@ public class MyAuthActivity extends Activity {
     }
     
     private void cullOldDatabaseEntries() {
-    	(new CullingOldFactsTask()).execute(mDbHelper);
+    	this.startService(new Intent(getApplicationContext(), CullOldDBEntriesService.class));
+    }
+    
+    private class DBInitiaterTask extends AsyncTask<Void, Void, Void> {
+
+		@Override
+		protected Void doInBackground(Void... params) {
+			repopulateDB();
+			return null;
+		}
+    	
+		@Override
+		protected void onPostExecute(Void result) {	
+        	forcePollSubscriptions();
+        	if (mPD != null) mPD.dismiss();
+        	
+        	/* Initialize location manager */
+    		if (lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+    			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
+    		} else if (lm != null && lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+    			lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10*UtilityFuncs.MIN_TO_MILLIS, 0, ll);
+    		}
+    		
+    		setPassiveLocationUpdateAlarm();
+    		
+    		//Log.d("Database lock problem", "asking new question");
+    		if (askOnStart && mDbHelper.getAllFacts().length > 0) {
+    			askOnStart = false;
+    			//askQuestion();
+    			(new AskQuestionTask()).execute();
+    		}
+		}
+    }
+    
+    private class AskQuestionTask extends AsyncTask<Void, Void, QuestionAnswerPair> {
+    	@Override
+    	protected void onPreExecute() {
+    		question_prompt.setText("Please wait while I generate a question...");
+    	}
+    	
+    	@Override
+    	protected QuestionAnswerPair doInBackground(Void... params) {
+    		return qg.askQuestion(getApplicationContext());
+    	}
+    	
+    	@Override
+    	protected void onPostExecute(QuestionAnswerPair result) {
+    		currQ = result;
+    		if (currQ != null) {
+		        question_prompt.setText(currQ.getQuestion());
+		        if (!isDD) input.setAdapter(null);
+		        else inputDD.setAdapter(null);
+	        	if (!currQ.isRecallQ()) {
+	        		//Log.d("QuestionType","Recog question");
+	        		replaceView(true);
+	        		ArrayAdapter<String> adapter = new ArrayAdapter<String>(getBaseContext(),
+	        				android.R.layout.simple_spinner_item, currQ.getAnswerListAsArr());
+	        		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+	        		inputDD.setAdapter(adapter);
+	        	} else if (currQ.isAutoCompl()) {
+	        		//Log.d("QuestionType","Recall autocomplete question");
+	        		replaceView(false);
+		        	ArrayAdapter<String> adapter = new ArrayAdapter<String>(getBaseContext(),
+		            		android.R.layout.simple_dropdown_item_1line, currQ.getAutoComplListAsArr());
+		        	input.setAdapter(adapter);
+	        	} else {
+	        		//Log.d("QuestionType","Neither type");
+	        		replaceView(false);
+	        	}
+	        	
+		        if (currQ.getMapView()) {
+		        	mapsButton.setEnabled(true);
+		        	if (cm.getActiveNetworkInfo().isConnectedOrConnecting()) {
+		        		input.setEnabled(false);
+		        		input.setHint("Click the map button to answer...");
+		        		mapsButton.requestFocus();
+		        	} else 
+		        		input.setHint("Enter Answer...");
+		        	input.setText("");
+		        } else {
+		        	mapsButton.setEnabled(false);
+		        	if (!isDD) {
+		        		input.setEnabled(true);
+		        		input.setHint("Enter Answer...");
+		        		input.setText("");
+		        		input.requestFocus();
+		        	}
+		        }
+		        questionStartTime = System.currentTimeMillis();
+	        } else {
+	        	question_prompt.setText(R.string.placeholder);
+	        	Toast.makeText(getApplicationContext(), "I don't have any questions to ask you right now. Please try again later!", Toast.LENGTH_SHORT).show();
+	        }
+    	}
     }
 }

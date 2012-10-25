@@ -52,6 +52,10 @@ public class TransmissionPacket extends TransmittablePacket {
 		isRecog = true;
 	}
 	
+	public void setTypeToDebug() {
+		typeid = -1;
+	}
+	
 	public void addQKey(String key, String value) {
 		question.put(key, value);
 	}

@@ -32,7 +32,7 @@ public class User extends TransmittablePacket {
 	}
 	
 	public User(File f,String n, String em, int a, String e, String g) throws IOException {
-		initialize(f,em,n,a,e,g);
+		initialize(f,n,em,a,e,g);
 		serialize();
 	}
 	
@@ -44,7 +44,7 @@ public class User extends TransmittablePacket {
 		age = a;
 		ethnicity = e;
 		gender = g;
-		unique_id = UtilityFuncs.getHash(name);
+		unique_id = UtilityFuncs.getHash(name + em + a + e + g);
 	}
 	
 	private void serialize() throws IOException {

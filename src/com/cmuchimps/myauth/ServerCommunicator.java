@@ -46,7 +46,7 @@ public class ServerCommunicator {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			Log.d("ServerCommunicator","Cannot write new queue file");
+			//Log.d("ServerCommunicator","Cannot write new queue file");
 		}
 	}
 	
@@ -152,9 +152,9 @@ public class ServerCommunicator {
 			mPopQueue = false;
 		}
 		
-		for (TransmittablePacket tp : mQueue) {
-			Log.d("ServerCommunicator",tp.toString());
-		}
+		/*for (TransmittablePacket tp : mQueue) {
+			//Log.d("ServerCommunicator",tp.toString());
+		}*/
 	}
 	
 	public void queuePacket(TransmittablePacket toQueue) throws IOException {
@@ -191,7 +191,7 @@ public class ServerCommunicator {
 			}
 		}
 		
-		Log.d("ServerCommunicator","Num packets accepted by server:" + toDestroy.size());
+		//Log.d("ServerCommunicator","Num packets accepted by server:" + toDestroy.size());
 		//destroy successfully transmitted packets
 		for (TransmittablePacket dest : toDestroy) {
 			mQueue.remove(dest);
@@ -202,8 +202,8 @@ public class ServerCommunicator {
 		return retVal; //false means not all were successfully transmitted
 	}
 	
-	private String sendPacket(TransmittablePacket toSend) {
-		Log.d("ServerCommunicator","Attempting to send packet...");
+	public String sendPacket(TransmittablePacket toSend) {
+		//Log.d("ServerCommunicator","Attempting to send packet...");
 		HttpClient client = new DefaultHttpClient();
 		//Instantiate a POST HTTP method
 		try {
@@ -211,8 +211,8 @@ public class ServerCommunicator {
 			postReq.setEntity(new UrlEncodedFormEntity(toSend.convertToNVP()));
 			HttpResponse response=client.execute(postReq);
 		    String resp = UtilityFuncs.convertStreamToString(new BufferedReader(new InputStreamReader(response.getEntity().getContent())));
-		    Log.d("ServerCommunicator","Response received is: ");
-		    Log.d("ServerCommunicator",resp);
+		    //Log.d("ServerCommunicator","Response received is: ");
+		    //Log.d("ServerCommunicator",resp);
 		    if (resp.equalsIgnoreCase(OK_RESP)) { //data secured on server
 		    	return "OK";
 		    } else if (resp.equalsIgnoreCase(SEND_USER_RESP)) {
