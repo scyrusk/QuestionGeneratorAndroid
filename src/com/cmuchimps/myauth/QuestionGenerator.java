@@ -247,10 +247,11 @@ public class QuestionGenerator {
 		int counter = 0;
 		for (Entry<Long, Double> entry : entropyMap.entrySet()) {
 			mapKeys[counter] = entry.getKey();
-			entropies[counter] = entry.getValue();
+			entropies[counter++] = entry.getValue();
 			//indices[counter] = counter++;
 		}
 		//UtilityFuncs.quicksort(entropies, indices);
+		
 		ArrayList<Integer> indices = UtilityFuncs.randomizeWithinEquivalence(entropies);
 		ArrayList<Long> retVal = new ArrayList<Long>(mapKeys.length);
 		for (int i : indices) retVal.add(mapKeys[i]);
@@ -259,7 +260,7 @@ public class QuestionGenerator {
 	
 	public QuestionAnswerPair askQuestionNAB(Context ctx) {
 		ArrayList<Long> qats = new ArrayList<Long>();
-		for (Long l : mDbHelper.getAllQatsWithMeta("questionType","name_list_persistent"))
+		for (Long l : mDbHelper.getAllQueryableQatsWithMeta("questionType","name_list_persistent"))
 			qats.add(l);
 		qats = maximizeEntropySort(qats.toArray(new Long[qats.size()]));
 		for (int k = qats.size() - 1; k >= 0; k--) {
@@ -347,6 +348,9 @@ public class QuestionGenerator {
 			//return new QuestionAnswerPair(question,answers,question_metas,answer_metas, 
 			//		mapViewAnswer, autocompl, !recog, allAnswers, autoents);
 			mQuestionsAsked.add(qat.getID());
+			if (UtilityFuncs.lastNSame(mQuestionsAsked, 3))
+				mDbHelper.setResetTimeOfQAT(qat.getID(), 
+						System.currentTimeMillis() + 15l*UtilityFuncs.MIN_TO_MILLIS);
 			return new QuestionAnswerPair(question, answers, question_metas,
 					answer_metas, false, autocompl, true, 
 					new ArrayList<String>(), new ArrayList<String>(autoents),
@@ -364,7 +368,7 @@ public class QuestionGenerator {
 		 */
 		ArrayList<Long> qats = new ArrayList<Long>();
 		int hoursInPast = 24;
-		for (Long l : mDbHelper.getAllQatsWithMeta("questionType","name_list"))
+		for (Long l : mDbHelper.getAllQueryableQatsWithMeta("questionType","name_list"))
 			qats.add(l);
 		qats.removeAll(mQuestionsAsked);
 		qats = maximizeEntropySort(qats.toArray(new Long[qats.size()]));
@@ -490,6 +494,8 @@ public class QuestionGenerator {
 			//return new QuestionAnswerPair(question,answers,question_metas,answer_metas, 
 			//		mapViewAnswer, autocompl, !recog, allAnswers, autoents);
 			mQuestionsAsked.add(qat.getID());
+			mDbHelper.setResetTimeOfQAT(qat.getID(), 
+					System.currentTimeMillis() + 24*UtilityFuncs.HOUR_TO_MILLIS);
 			ArrayList<String> autoentslist = new ArrayList<String>();
 			for (String s : autoents) autoentslist.add(s);
 			
@@ -514,7 +520,7 @@ public class QuestionGenerator {
 		 * Randomly select QAT out of those that match
 		 * Fill in the blanks
 		 */
-		Long[] qats = mDbHelper.getAllQatsWithMeta("questionType","fact_based");
+		Long[] qats = mDbHelper.getAllQueryableQatsWithMeta("questionType","fact_based");
 		Long[] afacts = mDbHelper.getAllFacts();
 		ArrayList<Long> facts = new ArrayList<Long>();
 		//System.out.println("length of afacts:" + afacts.length);
@@ -794,6 +800,9 @@ public class QuestionGenerator {
 
 				//mDbHelper.registerFactAsQueried(fact.getID());
 				mQuestionsAsked.add(theQAT.getID());
+				if (UtilityFuncs.lastNSame(mQuestionsAsked, 1))
+					mDbHelper.setResetTimeOfQAT(theQAT.getID(), 
+							System.currentTimeMillis() + 15l*UtilityFuncs.MIN_TO_MILLIS);
 				
 				
 				return new QuestionAnswerPair(question,answers,question_metas,answer_metas, 

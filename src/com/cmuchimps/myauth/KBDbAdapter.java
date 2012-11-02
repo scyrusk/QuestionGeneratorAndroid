@@ -69,7 +69,9 @@ public class KBDbAdapter {
 			"create table " + ACOND_TABLE + " (_id integer primary key autoincrement, "
 			+ "qatid integer references " + QAT_TABLE + "(id));";
 	private static final String QAT_CREATE =
-			"create table " + QAT_TABLE + " (_id integer primary key autoincrement, qtext string NOT NULL);";
+			"create table " + QAT_TABLE + " (_id integer primary key autoincrement, " +
+			"qtext string NOT NULL, " +
+			"reset_time integer);";
 	
 	private static final String TAGS_CREATE =
 			"create table " + TAGS_TABLE + "(_id integer primary key autoincrement," 
@@ -438,20 +440,56 @@ public class KBDbAdapter {
     public synchronized Long[] getAllQatsWithMeta(String meta_key, String meta_value) {
     	String selection = "name = '" + meta_key + "' AND value = '" + meta_value + "' AND qatid IS NOT NULL";
     	Cursor c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "name", "value", "qatid" }, selection, null, null, null, null);
+    	Long[] retVal = new Long[c.getCount()];
     	
-    	if (c != null && c.getCount() > 0) {
-    		Long[] retVal = new Long[c.getCount()];
+    	if (c != null && c.getCount() > 0) {	
     		int counter = 0;
     		c.moveToFirst();
     		while (!c.isAfterLast()) {
     			retVal[counter++] = c.getLong(c.getColumnIndex("qatid"));
     			c.moveToNext();
     		}
-    		return retVal;
     	}
     	if (c != null) c.close();
     	
-    	return new Long[0];
+    	return retVal;
+    }
+    
+    public synchronized Long[] getAllQueryableQatsWithMeta(String meta_key, String meta_value) {
+    	String selection = "name = '" + meta_key + "' AND value = '" + meta_value + "' AND qatid IS NOT NULL";
+    	Cursor c = mDb.query(META_TABLE, new String[] { KEY_ROWID, "name", "value", "qatid" }, selection, null, null, null, null);
+    	Long[] retVal = new Long[c.getCount()];
+    	
+    	if (c != null && c.getCount() > 0) {	
+    		int counter = 0;
+    		c.moveToFirst();
+    		while (!c.isAfterLast()) {
+    			retVal[counter++] = c.getLong(c.getColumnIndex("qatid"));
+    			c.moveToNext();
+    		}
+    	}
+    	if (c != null) c.close();
+    	
+    	Long[] queryable = getAllQueryableQATs();
+    	
+    	return UtilityFuncs.getIntersection(retVal, queryable);
+    }
+    
+    public synchronized Long[] getAllQueryableQATs() {
+    	String selection = "reset_time <= " + System.currentTimeMillis();
+    	Cursor c = mDb.query(QAT_TABLE, new String[] { KEY_ROWID, "reset_time" },
+    			selection, null, null, null, null);
+    	if (c == null)
+    		return new Long[0];
+    	Long[] retVal = getIndicesFromCursor(c);
+    	c.close();
+    	return retVal;
+    }
+    
+    public int setResetTimeOfQAT(long qat_id, long resetTime) {
+    	ContentValues cv = new ContentValues();
+    	cv.put("reset_time", resetTime);
+    	return mDb.update(QAT_TABLE, cv, KEY_ROWID + "=" + qat_id, null);
     }
     
     public synchronized Long[] findAllFactsWithTagsWithinTime(String[] tags, String[] subclasses, 
@@ -531,6 +569,7 @@ public class KBDbAdapter {
     public synchronized long createQAT(String qtext, ArrayList<HashMap<String,String>> metas) {
     	ContentValues qat_vals = new ContentValues();
     	qat_vals.put("qtext", qtext);
+    	qat_vals.put("reset_time", 0l);
     	long qat_id = mDb.insert(QAT_TABLE, null, qat_vals);
     	
     	/* Insert metas*/

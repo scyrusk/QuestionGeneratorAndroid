@@ -12,7 +12,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 
 public class TransmissionPacket extends TransmittablePacket {
-	public int response_id;
+	public long response_id;
 	public String user_id; //the unique_id of the user
 	public String qtext; //the verbatim question text
 	public HashMap<String,String> question; //meta-values about the question such as the time and qatid
@@ -28,13 +28,13 @@ public class TransmissionPacket extends TransmittablePacket {
 				new HashMap<String,String>(), "", 0l, false);
 	}
 	
-	public TransmissionPacket(int rid,String uid,String qt, HashMap<String,String> qs, 
+	public TransmissionPacket(long rid,String uid,String qt, HashMap<String,String> qs, 
 			ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, 
 			String ts, long at, boolean ir) {
 		initialize(rid,uid,qt,qs,as,ua,supp,ts, at, ir);
 	}
 	
-	private void initialize(int rid,String uid,String qt, HashMap<String,String> qs, 
+	private void initialize(long rid,String uid,String qt, HashMap<String,String> qs, 
 			ArrayList<HashMap<String,String>> as, String ua, HashMap<String,String> supp, 
 			String ts, long at, boolean ir) {
 		response_id = rid;

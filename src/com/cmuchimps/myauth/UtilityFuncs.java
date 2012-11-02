@@ -411,4 +411,12 @@ public class UtilityFuncs {
 			return -1l;
 		}
 	}
+	
+	public static boolean lastNSame(ArrayList<Long> arr, int n) {
+		if (arr.size() < n) return false;
+		for (int i = arr.size() - n + 1; i < arr.size(); i++) {
+			if (arr.get(i-1) != arr.get(i)) return false;
+		}
+		return true;
+	}
 }

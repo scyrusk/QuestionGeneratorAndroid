@@ -10,7 +10,7 @@ import org.apache.http.params.HttpParams;
 
 public class SkipQuestionPacket extends TransmittablePacket {
 	public static final int typeid = 2;
-	public int response_id;
+	public long response_id;
 	public boolean choice_uncomfortable;
 	public boolean choice_cant_remember;
 	public boolean choice_dont_understand;
@@ -27,13 +27,13 @@ public class SkipQuestionPacket extends TransmittablePacket {
 		initialize(-1,"", new HashMap<String,String>(), false, false, false, false, "", "", "", false, 0l);
 	}
 	
-	public SkipQuestionPacket(int rid,String qt, HashMap<String,String> qms, boolean c1, 
+	public SkipQuestionPacket(long rid,String qt, HashMap<String,String> qms, boolean c1, 
 			boolean c2, boolean c3, boolean c4, String e, String ts, String uid, boolean ir,
 			long at) {
 		initialize(rid, qt, qms, c1, c2, c3, c4, e, ts, uid, ir, at);
 	}
 	
-	private void initialize(int rid, String qt, HashMap<String,String> qms, boolean c1, 
+	private void initialize(long rid, String qt, HashMap<String,String> qms, boolean c1, 
 			boolean c2, boolean c3, boolean c4, String e, String ts, String uid, boolean ir,
 			long at) {
 		response_id = rid;

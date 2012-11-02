@@ -49,6 +49,8 @@ public class LocationSelectorActivity extends MapActivity {
 	private double selectedLong;
 	private MyLocationOverlay me;
 	
+	private long questionStartTime;
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -139,6 +141,7 @@ public class LocationSelectorActivity extends MapActivity {
 				Intent resultIntent = new Intent();
 				resultIntent.putExtra("latitude", selectedLat);
 				resultIntent.putExtra("longitude", selectedLong);
+				resultIntent.putExtra("total_time", System.currentTimeMillis()-questionStartTime);
 				setResult(Activity.RESULT_OK, resultIntent);
 				finish();
 			}
@@ -147,12 +150,18 @@ public class LocationSelectorActivity extends MapActivity {
 		mapView.invalidate();
 	}
 	
+	@Override
+    public void onResume() {
+		questionStartTime = System.currentTimeMillis();
+		super.onResume();
+	}
 	
 	@Override
     public void onBackPressed() {
 		Intent resultIntent = new Intent();
 		resultIntent.putExtra("latitude", selectedLat);
 		resultIntent.putExtra("longitude", selectedLong);
+		resultIntent.putExtra("total_time", System.currentTimeMillis()-questionStartTime);
 		setResult(Activity.RESULT_OK, resultIntent);
 		finish();
 	}

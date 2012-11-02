@@ -80,6 +80,7 @@ public class MyAuthActivity extends Activity {
 	private User mUser;
 	private ServerCommunicator mCommunicator;
 	private long questionStartTime;
+	private long locAnswerTime=0l;
 	
 	//form fields
 	TextView question_prompt;
@@ -202,7 +203,9 @@ public class MyAuthActivity extends Activity {
 					 * Ask new question and reset fields
 					 */
 					if (currQ != null) {
-						long amountTime = System.currentTimeMillis() - questionStartTime;
+						long amountTime = (currQ.getMapView() ?
+								locAnswerTime :
+								System.currentTimeMillis() - questionStartTime);
 						String user_id = getUser().unique_id;
 						String qtext = currQ.getQuestion();
 						HashMap<String,String> question = currQ.getQuestionMetas();
@@ -904,6 +907,7 @@ public class MyAuthActivity extends Activity {
         } else if (requestCode == LOCATION_SELECTOR_RESULT) {
         	double lat = (Double) data.getExtras().get("latitude");
         	double lng = (Double) data.getExtras().get("longitude");
+        	locAnswerTime = (Long) data.getExtras().get("total_time");
         	String toPrint = lat + "," + lng;
         	input.setText(toPrint);
         	//System.out.println(toPrint);

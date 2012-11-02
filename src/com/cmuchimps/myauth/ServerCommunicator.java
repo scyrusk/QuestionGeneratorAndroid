@@ -35,7 +35,7 @@ public class ServerCommunicator {
 	private ArrayList<TransmittablePacket> mQueue;
 	private Context mContext;
 	private boolean mPopQueue;
-	private static int nextRespID = 0;
+	private static long nextRespID = MyAuthActivity.r.nextLong();
 	private static boolean loadNext = true;
 	
 	public ServerCommunicator(Context c) {
@@ -55,17 +55,17 @@ public class ServerCommunicator {
 		serializeQueue();
 	}
 	
-	public static int getNextPacketID(File filesDir) {
+	public static long getNextPacketID(File filesDir) {
 		if (loadNext) {
 			File temp = new File(filesDir,NEXT_RESPONSE_ID_FILE);
 			if (temp.exists()) {
 				try {
 					nextRespID = new JSONDeserializer<Integer>().deserialize(new BufferedReader(new FileReader(temp)));
-				} catch (FileNotFoundException e) {
-					return MyAuthActivity.r.nextInt(Integer.MAX_VALUE-10000) + 10000;
+				} catch (Exception e) {
+					return MyAuthActivity.r.nextLong();
 				}
 			} else {
-				nextRespID = 0;
+				nextRespID = MyAuthActivity.r.nextLong();
 			}
 			loadNext = false;
 		}
